@@ -1,0 +1,10 @@
+# Linux server/worker environment (e.g. the 5090 box, or a headless server).
+# Installs the exact shared set from requirements.txt. The GUI viewer
+# (hdf5_demo, PyQt5) is intentionally NOT installed here - it only runs on
+# machines with a desktop session; install it separately if needed:
+#   pip install -r hdf5_demo/requirements.txt
+-r requirements.txt
+# Optional CUDA: the mediapipe==0.10.21 pip wheels are CPU-only (no CUDA).
+# If GPU inference is wanted later, add the CUDA build here so it never
+# touches the Windows requirements:
+#   nvidia-cuda-cudnn

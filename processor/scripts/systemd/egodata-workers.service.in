@@ -1,0 +1,15 @@
+[Unit]
+Description=EgoData workers x3 (hot-reload wrapper)
+After=egodata-backend.service
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_ROOT__
+ExecStart="__PROJECT_ROOT__/.venv-linux/bin/python" "__PROJECT_ROOT__/scripts/hot_reload_worker.py"
+Environment=EGODATA_SERVER_URL=http://127.0.0.1:__BACKEND_PORT__
+Environment=EGODATA_VLLM_URL=__VLLM_URL__
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__WANTED_BY__

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Workflow Studio — EgoData{% endblock %}
+
+{% block content %}
+<div id="workflow-root" class="h-full w-full bg-gray-950"></div>
+
+{% if dev_mode %}
+<!-- React SPA boot — Vite development server with Fast Refresh/HMR -->
+<script type="module" src="{{ dev_server_url }}/static/workflow-studio/@vite/client"></script>
+<script type="module" src="{{ dev_server_url }}/static/workflow-studio/src/main.tsx"></script>
+{% else %}
+<!-- React SPA boot — assets hashed at build time, resolved by pages.py -->
+{% if css_file %}
+<link rel="stylesheet" href="/static/workflow-studio/{{ css_file }}">
+{% endif %}
+{% if js_file %}
+<script type="module" src="/static/workflow-studio/{{ js_file }}"></script>
+{% endif %}
+{% endif %}
+{% endblock %}

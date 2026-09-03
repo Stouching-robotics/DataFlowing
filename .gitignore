@@ -1,0 +1,40 @@
+# Runtime data and local secrets
+.env
+.env.*
+!.env.example
+data/
+backups/
+.backups/
+.inspection/
+.venv*/
+__pycache__/
+*.py[cod]
+*.log
+*.sqlite*
+*.db
+
+# Large/private assets
+models/
+*.pt
+*.task
+*.h5
+*.hdf5
+*.mp4
+*.parquet
+*.zip
+*.deb
+
+# Frontend caches/dependencies
+node_modules/
+web/workflow-studio/dist/
+web/workflow-studio/.vite/
+
+# The checked-in examples are the only exception to runtime media exclusions.
+!processor/examples/
+!processor/examples/**/
+!processor/examples/**/data/
+!processor/examples/**/data/**/*.parquet
+!processor/examples/**/meta/episodes/
+!processor/examples/**/meta/episodes/**/*.parquet
+!processor/examples/**/videos/
+!processor/examples/**/videos/**/*.mp4

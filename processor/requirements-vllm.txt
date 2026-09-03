@@ -1,0 +1,5 @@
+# Local VLM runtime (vLLM) — GPU-only, NEVER merge into requirements-linux.txt /
+# requirements-windows.txt. vLLM pulls its matching torch/CUDA build
+# transitively; do not pin torch here. SM120 (RTX 5090) FP8 flags live in
+# scripts/run_vllm.sh.
+vllm==0.27.1

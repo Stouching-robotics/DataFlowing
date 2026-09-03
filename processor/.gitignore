@@ -1,0 +1,51 @@
+# Python environments are OS-specific and must never be copied between hosts.
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local worker scratch/output.
+.egodata-worker/
+worker-output/
+data/tmp/
+data/logs/
+
+# 本地运行数据(体积大且含敏感信息, 不入库)
+# 项目数据集、系统状态、上传暂存、处理结果和迁移记录全部属于运行时内容。
+data/
+
+# Frontend dependencies/build cache.
+web/workflow-studio/node_modules/
+web/workflow-studio/dist/
+web/workflow-studio/*.tsbuildinfo
+
+# Local secrets and machine-specific settings.
+.env
+.env.*.local
+.env.bak*
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Local model assets and scratch (large binaries, never in git).
+models/
+*.deb
+*.zip
+*.7z
+*.rar
+*.tar.gz
+*.h5
+*.hdf5
+.tools/
+Temp/
+Test_Video/
+.backups/
+hdf5_demo/
+s80m_stereo_camera/
+head_stereo.sample.json

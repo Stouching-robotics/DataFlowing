@@ -1,0 +1,15 @@
+[Unit]
+Description=EgoData backend (uvicorn, port __BACKEND_PORT__)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__PROJECT_ROOT__
+ExecStart=/bin/bash "__PROJECT_ROOT__/scripts/run_backend_linux.sh"
+Environment=PORT=__BACKEND_PORT__
+Environment=EGODATA_VLLM_URL=__VLLM_URL__
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=__WANTED_BY__

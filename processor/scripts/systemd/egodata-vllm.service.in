@@ -1,0 +1,17 @@
+[Unit]
+Description=EgoData vLLM inference (Qwen3-VL-8B-FP8, port __VLLM_PORT__)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/tmp
+ExecStart=/bin/bash "__PROJECT_ROOT__/scripts/run_vllm.sh"
+Environment=EGODATA_VLLM_PORT=__VLLM_PORT__
+Environment=EGODATA_VLLM_URL=__VLLM_URL__
+Restart=on-failure
+RestartSec=10
+# 模型加载较慢,给足启动时间
+TimeoutStartSec=600
+
+[Install]
+WantedBy=__WANTED_BY__

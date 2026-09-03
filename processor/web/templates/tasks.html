@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Projects - Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="flex-1 overflow-y-auto hide-scrollbar p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-200"><span data-i18n="projects_title">Projects</span></h2>
+        <div class="flex gap-3">
+            <input type="text" id="projects-search" data-i18n-placeholder="search_projects" placeholder="Search projects..." value=""
+                   class="bg-gray-800 text-sm rounded px-3 py-1.5 border border-gray-700 w-48"
+                   oninput="loadProjects()">
+            <button id="btn-new-project" onclick="showProjectForm()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium flex items-center gap-1.5">
+                <iconify-icon icon="ant-design:plus-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="new_project">New Project</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Inline Project Form (hidden by default) -->
+    <div id="project-form" class="hidden mb-4 bg-gray-900 rounded-lg border border-gray-800 p-4 space-y-3">
+        <div class="flex items-center justify-between">
+            <span id="project-form-title" class="text-sm font-medium text-gray-200" data-i18n="new_project">New Project</span>
+            <button onclick="hideProjectForm()" class="text-gray-500 hover:text-gray-300">
+                <iconify-icon icon="ant-design:close-outlined" class="icon-sm"></iconify-icon>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+                <label class="block text-gray-500 mb-1" data-i18n="project_name">Project Name</label>
+                <input id="pf-name" class="bg-gray-800 text-sm rounded px-3 py-1.5 border border-gray-700 w-full focus:border-blue-500 focus:outline-none"
+                       placeholder="e.g. fisheye_project" maxlength="128">
+            </div>
+            <div>
+                <label class="block text-gray-500 mb-1" data-i18n="bind_workflow">Workflows</label>
+                <div class="relative">
+                    <button type="button" id="wf-dropdown-toggle"
+                            class="w-full bg-gray-800 text-sm text-left rounded px-3 py-1.5 border border-gray-700 hover:border-gray-600 focus:border-blue-500 focus:outline-none flex items-center gap-2">
+                        <span id="wf-dropdown-label" class="truncate flex-1 text-gray-400" data-i18n="workflow_placeholder">— Select workflow —</span>
+                        <iconify-icon id="wf-dropdown-arrow" icon="ant-design:down-outlined" class="text-gray-500 icon-sm shrink-0 transition-transform duration-150"></iconify-icon>
+                    </button>
+                    <div id="wf-dropdown-panel" class="hidden absolute z-20 mt-1 w-full bg-gray-900 rounded border border-gray-700 shadow-xl max-h-56 overflow-y-auto"></div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-gray-500 mb-1" data-i18n="status">Status</label>
+                <select id="pf-status" class="bg-gray-800 text-sm rounded px-3 py-1.5 border border-gray-700 w-full focus:border-blue-500 focus:outline-none">
+                    <option value="active">active</option>
+                    <option value="paused">paused</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-500 mb-1" data-i18n="target_episodes">Target Episodes</label>
+                <input id="pf-target" type="number" min="0"
+                       class="bg-gray-800 text-sm rounded px-3 py-1.5 border border-gray-700 w-full focus:border-blue-500 focus:outline-none"
+                       placeholder="0 = unlimited" title="Planned episode count for this project; collector polls total_required / current_count">
+            </div>
+            <div class="col-span-2">
+                <label class="block text-gray-500 mb-1" data-i18n="task_description">Description</label>
+                <textarea id="pf-description" rows="2"
+                          class="bg-gray-800 text-sm rounded px-3 py-1.5 border border-gray-700 w-full focus:border-blue-500 focus:outline-none"
+                          maxlength="500"></textarea>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+            <button onclick="hideProjectForm()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-4 py-1.5 rounded" data-i18n="cancel">Cancel</button>
+            <button onclick="saveProject()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-1.5 rounded font-medium" data-i18n="save">Save</button>
+        </div>
+    </div>
+
+    <!-- Project cards -->
+    <div id="projects-list" class="space-y-3">
+        <div class="text-center text-gray-600 text-sm py-8" data-i18n="loading">Loading...</div>
+    </div>
+</div>
+
+<script src="/static/js/tasks.js?v=202609031400"></script>
+{% endblock %}

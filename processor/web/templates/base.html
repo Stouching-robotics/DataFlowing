@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set boot_user = request.state.auth_user|default({}) %}
+    <title>{% block title %}Data Acquisition{% endblock %}</title>
+    <link rel="stylesheet" href="/static/plyr.css" />
+    <link rel="stylesheet" href="/static/tailwind-generated.css?v=202608191021">
+    <script src="/static/iconify-preload.js"></script>
+    <script src="/static/iconify-icon.min.js"></script>
+    <script src="/static/plyr.js"></script>
+    <script src="/static/js/i18n.js?v=202608281501"></script>
+    <style>
+        :root {
+            --plyr-color-main: #3b82f6;
+        }
+        .episode-card { cursor: pointer; }
+        .episode-card.active { background-color: #1e3a5f; border-left: 3px solid #3b82f6; }
+        /* Plyr — fill aspect-video container */
+        #video-grid { min-width: 0; min-height: 0; overflow: hidden; }
+        #video-grid .plyr,
+        #video-grid .plyr__video-wrapper,
+        #video-grid .plyr video {
+            width: 100%; height: 100%; min-width: 0; min-height: 0;
+        }
+        #video-grid .plyr video { object-fit: contain; }
+        .hide-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Iconify icons */
+        iconify-icon { display: inline-block; vertical-align: -0.125em; }
+        .icon-sm { font-size: 14px; }
+        .icon-md { font-size: 18px; }
+        /* Frame-aligned mode: Plyr falls back to its default control bar when
+           `controls: []` — hide it entirely. The central play button stays so
+           clicking any view plays the whole frame-aligned set. */
+        .plyr__controls { display: none !important; }
+        .plyr__control--overlaid { display: inline-flex !important; }
+        .plyr--video .plyr__control.plyr__tab-focus { box-shadow: none; }
+        /* Sidebar */
+        .sidebar-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px; border-radius: 6px; margin: 2px 8px;
+            color: #9ca3af; font-size: 14px; transition: all 0.15s;
+            text-decoration: none; white-space: nowrap;
+        }
+        .sidebar-link:hover { background: #1f2937; color: #e5e7eb; }
+        .sidebar-link.active {
+            background: #1e3a5f; color: #93c5fd;
+            border-left: 3px solid #3b82f6; margin-left: 5px;
+            padding-left: 13px; border-radius: 0 6px 6px 0;
+        }
+        .sidebar-sub {
+            display: flex; align-items: center; gap: 8px;
+            padding: 7px 16px 7px 44px; margin: 1px 8px; border-radius: 6px;
+            color: #6b7280; font-size: 13px; transition: all 0.15s;
+            text-decoration: none; white-space: nowrap;
+        }
+        .sidebar-sub:hover { background: #1f2937; color: #d1d5db; }
+        .sidebar-sub.active {
+            color: #93c5fd; background: #111827;
+        }
+        .sidebar-group { overflow: hidden; transition: max-height 0.25s ease; }
+        .sidebar-group.collapsed { max-height: 0 !important; }
+        /* Toggle button — rounded square with triangle icon */
+        .sidebar-toggle {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 6px; margin-left: auto; flex-shrink: 0;
+            background: #1f2937; color: #6b7280; font-size: 12px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .sidebar-link:hover .sidebar-toggle { background: #374151; color: #9ca3af; }
+        .sidebar-link.active .sidebar-toggle { background: #1e3a5f; color: #93c5fd; }
+        .sidebar-toggle-icon { transition: transform 0.25s ease; display: inline-flex; }
+        .collapsed-toggle .sidebar-toggle-icon { transform: rotate(-90deg); }
+        /* L2 toggle — smaller */
+        .sidebar-toggle-sm {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; border-radius: 4px; margin-left: auto; flex-shrink: 0;
+            background: #1f2937; color: #6b7280; font-size: 10px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .sidebar-sub:hover .sidebar-toggle-sm { background: #374151; color: #9ca3af; }
+        .sidebar-sub.active .sidebar-toggle-sm { background: #1e3a5f; color: #93c5fd; }
+        .sidebar-toggle-icon-sm { transition: transform 0.25s ease; display: inline-flex; }
+        .collapsed-toggle .sidebar-toggle-icon-sm { transform: rotate(-90deg); }
+        .sidebar-leaf {
+            display: flex; align-items: center; gap: 6px;
+            padding: 3px 16px 3px 56px; margin: 1px 8px; border-radius: 4px;
+            color: #6b7280; font-size: 12px; transition: all 0.15s;
+            text-decoration: none; white-space: nowrap;
+        }
+        .sidebar-leaf:hover { background: #1f2937; color: #d1d5db; }
+        .sidebar-leaf.active { color: #93c5fd; background: #111827; }
+        .sidebar-sub-group { overflow: hidden; transition: max-height 0.25s ease; }
+        .sidebar-sub-group.collapsed { max-height: 0 !important; }
+        .sidebar-sub-chevron { transition: transform 0.2s; font-size: 10px; margin-left: auto; }
+        /* Skeleton pulse */
+        @keyframes skeleton-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 h-screen flex overflow-hidden">
+    <!-- Left Sidebar -->
+    <aside class="flex flex-col bg-gray-900 border-r border-gray-800 flex-shrink-0" style="width:220px">
+        <!-- Brand -->
+        <div class="px-4 py-3 border-b border-gray-800">
+            <div class="flex items-center gap-2">
+                <img src="/static/logo.png" alt="EgoData" class="w-8 h-auto flex-shrink-0">
+                <span class="text-sm font-semibold text-gray-200">EgoData</span>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 py-3 flex flex-col gap-0.5">
+            <a href="/" class="sidebar-link" data-page="home">
+                <iconify-icon icon="ant-design:home-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="nav_home">Home</span>
+            </a>
+            <a href="/tasks" class="sidebar-link" data-page="tasks">
+                <iconify-icon icon="ant-design:project-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="nav_tasks">Projects</span>
+            </a>
+            <a href="/workflow-studio" class="sidebar-link" data-page="workflow-studio">
+                <iconify-icon icon="ant-design:apartment-outlined" class="icon-sm"></iconify-icon>
+                <span>Workflow</span>
+            </a>
+            <a href="/users" id="users-nav" class="sidebar-link{% if boot_user.role|default('') != 'admin' %} hidden{% endif %}" data-page="users">
+                <iconify-icon icon="ant-design:team-outlined" class="icon-sm"></iconify-icon>
+                <span>Users</span>
+            </a>
+            <a href="/annotation-studio" class="sidebar-link" data-page="annotation-studio">
+                <iconify-icon icon="ant-design:edit-outlined" class="icon-sm"></iconify-icon>
+                <span>Annotation</span>
+            </a>
+            <!-- Video Review — status shortcuts; the project→task→video
+                 hierarchy list renders on the right side of the page -->
+            <a href="/review" class="sidebar-link" data-page="review">
+                <iconify-icon icon="ant-design:video-camera-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="nav_review">Video Review</span>
+            </a>
+            <a href="/review?status=completed" class="sidebar-sub" data-review-status="reviewing">
+                <iconify-icon icon="ant-design:eye-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="stat_reviewing">Reviewing</span>
+            </a>
+            <a href="/review?status=reviewed" class="sidebar-sub" data-review-status="approved">
+                <iconify-icon icon="ant-design:check-circle-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="stat_approved">Approved</span>
+            </a>
+            <a href="/review?status=failed" class="sidebar-sub" data-review-status="failed">
+                <iconify-icon icon="ant-design:warning-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="stat_failed">Failed</span>
+            </a>
+        </nav>
+
+        <!-- Bottom links -->
+        <div class="py-3 border-t border-gray-800 flex flex-col gap-0.5">
+            <a href="/trash" class="sidebar-link" data-page="trash">
+                <iconify-icon icon="ant-design:delete-outlined" class="icon-sm"></iconify-icon>
+                <span data-i18n="nav_trash">Trash</span>
+                <span id="trash-badge" class="ml-auto text-xs text-gray-500"></span>
+            </a>
+        </div>
+
+        <!-- User menu -->
+        <div class="border-t border-gray-800 px-3 py-2 relative" id="user-menu-container">
+            <button id="user-menu-btn" onclick="toggleUserMenu()"
+                    class="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-800/50 transition-colors text-left">
+                <img src="/static/logo.png" alt="" class="w-7 h-7 rounded-full flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                    <div id="user-name-display" class="text-xs text-gray-300 truncate">{{ boot_user.username|default('') }}</div>
+                    <div id="user-role-display" class="text-xs text-gray-600">{{ boot_user.role|default('')|title }}</div>
+                </div>
+                <iconify-icon icon="ant-design:caret-up-outlined" id="user-caret" class="text-gray-600 text-xs transition-transform"></iconify-icon>
+            </button>
+
+            <!-- Dropdown -->
+            <div id="user-dropdown" class="hidden absolute bottom-full left-3 right-3 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50">
+                <div class="px-3 py-2 border-b border-gray-700">
+                    <div id="dd-username" class="text-xs text-gray-300 font-medium">{{ boot_user.username|default('') }}</div>
+                    <div id="dd-role" class="text-xs text-gray-500">{{ boot_user.role|default('')|title }}</div>
+                </div>
+                <a href="javascript:void(0)" class="block px-3 py-2 text-xs text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-colors">
+                    <iconify-icon icon="ant-design:user-outlined" class="icon-sm mr-2"></iconify-icon>Profile
+                </a>
+                <a href="javascript:void(0)" class="block px-3 py-2 text-xs text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-colors">
+                    <iconify-icon icon="ant-design:lock-outlined" class="icon-sm mr-2"></iconify-icon>Change Password
+                </a>
+                <a href="javascript:void(0)" onclick="handleLogout()" class="block px-3 py-2 text-xs text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors border-t border-gray-700">
+                    <iconify-icon icon="ant-design:logout-outlined" class="icon-sm mr-2"></iconify-icon>Logout
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="flex-1 flex min-w-0 overflow-hidden">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Sidebar active state -->
+    <script>
+        // ── Active state (static links only) ──────────
+        (function() {
+            const pathname = document.location.pathname.replace(/\/$/, '') || '/';
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                const linkPage = link.dataset.page;
+                const isActive = (pathname === '/' && linkPage === 'home')
+                    || (pathname === '/tasks' && linkPage === 'tasks')
+                    || (pathname === '/workflow-studio' && linkPage === 'workflow-studio')
+                    || (pathname === '/users' && linkPage === 'users')
+                    || (pathname === '/annotation-studio' && linkPage === 'annotation-studio')
+                    || (pathname === '/review' && linkPage === 'review')
+                    || (pathname === '/trash' && linkPage === 'trash');
+                if (isActive) link.classList.add('active');
+            });
+        })();
+
+        // ── Review status shortcut highlight (URL-driven) ──
+        (function() {
+            const pathname = document.location.pathname.replace(/\/$/, '') || '/';
+            if (pathname === '/review') {
+                const status = new URLSearchParams(document.location.search).get('status') || 'completed';
+                const groupKey = status === 'reviewed' ? 'approved'
+                    : (status === 'failed' ? 'failed' : 'reviewing');
+                document.querySelectorAll('.sidebar-sub[data-review-status]').forEach(el => {
+                    if (el.dataset.reviewStatus === groupKey) el.classList.add('active');
+                });
+            }
+        })();
+
+        // No-op stubs kept for app.js compatibility (the sidebar status tree
+        // was removed — the hierarchy list lives on the review page itself).
+        function refreshReviewTree() {}
+        function highlightNavActive() {}
+        window.highlightNavActive = highlightNavActive;
+
+        function escHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ── Trash badge ──
+        async function updateTrashBadge() {
+            try {
+                const res = await fetch('/api/v1/episodes?status=deleted&limit=1');
+                const data = await res.json();
+                const badge = document.getElementById('trash-badge');
+                if (badge) {
+                    const count = data.total || 0;
+                    badge.textContent = count > 0 ? '(' + count + ')' : '';
+                    badge.className = count > 0 ? 'text-orange-400 ml-auto text-xs' : 'text-gray-500 ml-auto text-xs';
+                }
+            } catch(e) {}
+        }
+        updateTrashBadge();
+
+        // Bootstrap the shared layout from the signed-in token claims so the
+        // real account is visible on first paint. /auth/me remains the
+        // authoritative refresh for role changes and account expiry.
+        window.__EGO_USER__ = {{ boot_user|default({})|tojson }};
+
+        // ── User menu ──────────────────────────────────
+        let _userMenuLoaded = false;
+        async function loadUserInfo() {
+            if (_userMenuLoaded) return;
+            _userMenuLoaded = true;
+            try {
+                const res = await fetch('/api/v1/auth/me');
+                if (!res.ok) return;
+                const user = await res.json();
+                document.getElementById('user-name-display').textContent = user.username || '-';
+                document.getElementById('user-role-display').textContent = user.role || '-';
+                document.getElementById('dd-username').textContent = user.username || '-';
+                document.getElementById('dd-role').textContent = user.role || '-';
+                const usersNav = document.getElementById('users-nav');
+                if (usersNav && user.role === 'admin') usersNav.classList.remove('hidden');
+            } catch(e) { /* silent */ }
+        }
+        loadUserInfo();
+
+        function toggleUserMenu() {
+            const dd = document.getElementById('user-dropdown');
+            const caret = document.getElementById('user-caret');
+            if (!dd) return;
+            const isOpen = !dd.classList.contains('hidden');
+            dd.classList.toggle('hidden');
+            if (isOpen) {
+                caret.style.transform = '';
+            } else {
+                caret.style.transform = 'rotate(180deg)';
+                if (!_userMenuLoaded) loadUserInfo();
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('user-menu-container');
+            const dd = document.getElementById('user-dropdown');
+            if (container && dd && !container.contains(e.target)) {
+                if (!dd.classList.contains('hidden')) {
+                    toggleUserMenu();
+                }
+            }
+        });
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/v1/auth/logout', { method: 'POST' });
+            } catch(e) {}
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

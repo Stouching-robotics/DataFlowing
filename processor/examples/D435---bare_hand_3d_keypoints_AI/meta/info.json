@@ -1,0 +1,112 @@
+{
+  "codebase_version": "v2.1",
+  "fps": 30.0,
+  "video": true,
+  "task_name": "D435---bare_hand_3d_keypoints_AI",
+  "features": {
+    "observation.imu": {
+      "dtype": "float32",
+      "shape": [
+        6
+      ]
+    },
+    "action": {
+      "dtype": "float32",
+      "shape": [
+        1
+      ]
+    },
+    "observation.images.D435_rgb": {
+      "dtype": "video",
+      "shape": [
+        720,
+        1280,
+        3
+      ],
+      "names": [
+        "height",
+        "width",
+        "channel"
+      ],
+      "video_info": {
+        "video.fps": 30.0,
+        "video.height": 720,
+        "video.width": 1280,
+        "video.channels": 3,
+        "video.codec": "h264",
+        "video.pix_fmt": "yuv420p",
+        "video.is_depth_map": false,
+        "video.is_depth_visualization": false,
+        "has_audio": false
+      }
+    },
+    "observation.images.D435_depth": {
+      "dtype": "video",
+      "shape": [
+        480,
+        848,
+        1
+      ],
+      "names": [
+        "height",
+        "width",
+        "channel"
+      ],
+      "video_info": {
+        "video.fps": 30.0,
+        "video.height": 480,
+        "video.width": 848,
+        "video.channels": 1,
+        "video.codec": "hevc",
+        "video.pix_fmt": "gray12le",
+        "video.is_depth_map": true,
+        "video.is_depth_visualization": false,
+        "has_audio": false,
+        "video.depth_scale": 0.001,
+        "video.depth_encoding": "uint16_mm_to_gray12le_lossless"
+      }
+    }
+  },
+  "cameras": {
+    "D435_rgb": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "devices": [
+    {
+      "key": "sample:d435",
+      "kind": "d435",
+      "name": "d435",
+      "slots": [
+        "D435_rgb",
+        "D435_depth"
+      ]
+    }
+  ],
+  "device_names": {
+    "D435_rgb": "sample-device",
+    "D435_depth": "sample-device"
+  },
+  "sensors": [],
+  "sensor_dim": 256,
+  "created_at": 0,
+  "format": "lerobot_v2.1",
+  "total_episodes": 1,
+  "total_frames": 90,
+  "total_tasks": 2,
+  "chunks_size": 1000,
+  "data_path": "data/chunk-{episode_chunk:03d}/episode_{episode_index:06d}.parquet",
+  "video_path": "videos/chunk-{episode_chunk:03d}/{video_key}/episode_{episode_index:06d}.{ext}",
+  "video_extensions": {
+    "D435_rgb": "mp4",
+    "D435_depth": "mp4"
+  },
+  "extensions": {
+    "episodes_file": "meta/episodes/chunk-{episode_chunk:03d}/episode_{episode_index:06d}.parquet",
+    "project_storage": "sessions/<project>/{data,meta,videos}",
+    "stats_file": "meta/stats.json",
+    "tasks_file": "meta/tasks.json"
+  },
+  "total_chunks": 1
+}

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SSH_HOST="${EGODATA_SSH_HOST:-}"
+SSH_USER="${EGODATA_SSH_USER:-}"
+LOCAL_PORT="${EGODATA_DB_LOCAL_PORT:-15432}"
+REMOTE_DB_HOST="${EGODATA_DB_REMOTE_HOST:-}"
+REMOTE_DB_PORT="${EGODATA_DB_REMOTE_PORT:-5432}"
+
+exec ssh -o ExitOnForwardFailure=yes -N \
+  -L "127.0.0.1:${LOCAL_PORT}:${REMOTE_DB_HOST}:${REMOTE_DB_PORT}" \
+  "${SSH_USER}@${SSH_HOST}"

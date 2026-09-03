@@ -1,0 +1,34 @@
+# EgoData shared dependencies - used by both the Linux worker and the
+# Windows local environment (installed via requirements-linux.txt /
+# requirements-windows.txt). All packages below are cross-platform.
+fastapi==0.115.*
+uvicorn[standard]==0.30.*
+sqlalchemy[asyncio]==2.0.*
+asyncpg==0.29.*
+pydantic-settings==2.*
+python-multipart==0.0.*
+pyarrow==17.*
+pandas==2.*
+# MediaPipe 0.10.21 supplies the compatible opencv-contrib-python package.
+# Do not install opencv-python-headless alongside it; both provide cv2.
+numpy<2
+aiofiles==24.*
+Jinja2>=3.1
+Pillow==11.*
+# 0.10.35 removed the legacy mp.solutions namespace used by this worker.
+# 0.10.21 keeps the stable Hands 21-landmark API and bundles its model assets.
+mediapipe==0.10.21
+# Black-glove workflow (loaded lazily; not needed for ordinary upload/review).
+# RTMPose's model is downloaded by rtmlib on first use and cached by the
+# runtime.  The YOLO-World weights are bundled under app/processing/black_glove.
+ultralytics==8.4.121
+rtmlib>=0.0.16
+onnxruntime>=1.17
+httpx>=0.27,<1
+paramiko>=3.4,<4
+# HDF5 export (app/hdf5_export.py + hdf5_demo viewer): episode .h5 files.
+h5py==3.16.*
+# NOTE: sqlalchemy + asyncpg are legacy imports still referenced by
+# app/{database,models,cleaning,export_engine,config}.py. The PostgreSQL
+# backend was removed in v5 (localstore is authoritative). Kept until those
+# files are cleaned up - do not uninstall them from a working venv.

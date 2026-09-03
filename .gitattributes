@@ -1,0 +1,11 @@
+* text=auto eol=lf
+*.mp4 binary
+*.parquet binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.so binary
+*.so.* binary
+*.rknn binary
+*.pt binary
+*.task binary

@@ -1,0 +1,576 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Annotation Studio' if page_mode == 'annotation' else 'Video Review' }} - Data Acquisition{% endblock %}
+
+{% block content %}
+<style>
+    .frame-strip-cell { flex: 1; height: 100%; min-width: 1px; }
+    .frame-strip-cell.unlabeled { background: #374151; }
+    #batch-bar {
+        transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
+        max-height: 44px; opacity: 1;
+    }
+    #batch-bar.hidden {
+        max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0;
+        overflow: hidden; border-top-width: 0;
+    }
+    :root { --timeline-side-width: 370px; }
+    .timeline-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+    }
+    .timeline-row > :first-child { min-width: 0; }
+    #annotation-timeline-markers {
+        position: relative;
+        height: 32px;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid #25334a;
+        border-radius: 6px;
+        background: #0b1220;
+    }
+    /* The marker row and playback row form one aligned timeline workspace. */
+    .annotation-mode #annotation-timeline,
+    .annotation-mode #frame-controls {
+        background: #080f1c;
+    }
+    .annotation-mode #annotation-timeline {
+        padding-bottom: 2px !important;
+    }
+    .annotation-mode #frame-controls {
+        padding-top: 2px !important;
+    }
+    #annotation-timeline-track {
+        position: relative;
+        height: 32px;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid #25334a;
+        border-radius: 6px;
+        background: #0b1220;
+        cursor: pointer;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    #annotation-timeline-markers {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    #playback-toolbar, #preview-options, #slice-preview {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    #annotation-timeline-track::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        top: 50%;
+        height: 4px;
+        border-radius: 999px;
+        background: #25334a;
+        transform: translateY(-50%);
+        transition: height .12s ease;
+        pointer-events: none;
+    }
+    #annotation-timeline-track:hover::before,
+    #annotation-timeline-track.is-scrubbing::before {
+        height: 6px;
+    }
+    .annotation-timeline-segment.candidate {
+        border: 1.5px dashed rgba(34,211,238,.75);
+        background: rgba(34,211,238,.14) !important;
+    }
+    .annotation-timeline-segment {
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        min-width: 1px;
+        -webkit-user-select: none;
+        user-select: none;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 10px;
+        color: #dbeafe;
+        font: 11px/28px ui-monospace, SFMono-Regular, Menlo, monospace;
+        text-align: left;
+        white-space: nowrap;
+        cursor: pointer;
+        opacity: .82;
+        transition: filter .15s, opacity .15s, box-shadow .15s;
+    }
+    .annotation-timeline-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .annotation-timeline-handle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 9px;
+        z-index: 3;
+        cursor: ew-resize;
+        opacity: .55;
+    }
+    .annotation-timeline-handle::after {
+        content: '';
+        position: absolute;
+        top: 7px;
+        bottom: 7px;
+        left: 3px;
+        width: 2px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.78);
+    }
+    .annotation-timeline-handle-start { left: 0; }
+    .annotation-timeline-handle-end { right: 0; }
+    .annotation-timeline-segment:hover .annotation-timeline-handle,
+    .annotation-timeline-segment.is-dragging .annotation-timeline-handle {
+        opacity: 1;
+    }
+    .annotation-timeline-segment.is-dragging {
+        cursor: grabbing;
+        opacity: 1;
+        filter: brightness(1.18);
+        z-index: 4;
+    }
+    .annotation-timeline-segment:hover,
+    .annotation-timeline-segment.is-current {
+        opacity: 1;
+        filter: brightness(1.18);
+        box-shadow: 0 0 0 1px rgba(147,197,253,.75), 0 0 12px rgba(59,130,246,.18);
+        z-index: 2;
+    }
+    .annotation-card-label {
+        letter-spacing: .01em;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
+    }
+    .annotation-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+    }
+    .annotation-card-meta span:last-child {
+        color: #64748b;
+    }
+    .annotation-card.is-editing {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 0 1px rgba(245, 158, 11, .55);
+        background: rgba(245, 158, 11, .08) !important;
+    }
+    .legacy-annotation-meta { display: none; }
+    #annotation-timeline-cursor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #4ade80;
+        box-shadow: 0 0 8px rgba(74,222,128,.75);
+        pointer-events: none;
+        z-index: 5;
+        transform: translateX(-1px);
+        will-change: left;
+        transition: none;
+    }
+    #annotation-timeline-track:hover #annotation-timeline-cursor,
+    #annotation-timeline-track.is-scrubbing #annotation-timeline-cursor {
+        width: 3px;
+        transform: translateX(-1.5px);
+    }
+    /* Frame label width follows the font, not a hard-coded pixel value:
+       CJK/fallback mono fonts and browser zoom differ per OS (Windows/Linux),
+       so a fixed 96px clips on Linux. min-width reserves ~"Frame 0000 / 0000". */
+    #annotation-timeline-frame {
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 14ch;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        white-space: nowrap;
+        line-height: 1;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+    }
+    .timeline-side-controls {
+        width: max-content;
+        min-width: max-content;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        overflow: visible;
+    }
+    /* Both marker and playback rows use the same dynamic control column.
+       This keeps a marker at frame N vertically aligned with the playback
+       cursor at frame N, even when Linux uses a wider fallback font. */
+    .timeline-button-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+    .frame-control-button {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    #btn-play-all {
+        width: 86px;
+        height: 32px;
+    }
+    .review-mode #frame-controls {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    #btn-play-all { justify-content: center; flex-shrink: 0; }
+    #btn-play-all .play-label {
+        display: inline-block;
+        width: 34px;
+        text-align: left;
+    }
+    @media (max-width: 1100px) {
+        :root { --timeline-side-width: 360px; }
+        .timeline-button-group { gap: 4px; }
+        .timeline-side-controls { gap: 6px; }
+        #btn-play-all { width: 82px; }
+    }
+</style>
+
+<!-- Left: video composition workspace -->
+<section id="review-workspace" class="{{ 'annotation-mode' if page_mode == 'annotation' else 'review-mode' }} order-1 flex-1 flex flex-col bg-gray-950 min-w-0 min-h-0 overflow-hidden relative">
+    <!-- ☷ Preview Options:漂浮可拖动的独立控制菜单(手部骨骼叠加等)。
+         点开批次详情后才显示(审核页/通过页可用);锚定在视频区域左上角
+         (素材栏下方),按住可拖到任意位置;点击展开菜单。 -->
+    <div id="preview-options" class="hidden" style="position:absolute;left:12px;top:48px;z-index:45;">
+        <button id="btn-preview-options" type="button"
+                class="text-xs px-2.5 py-1.5 rounded-lg border border-gray-600/70 bg-gray-900/55 backdrop-blur-md text-gray-300 hover:border-blue-500 hover:text-white transition-colors flex items-center gap-1 shadow-lg"
+                style="cursor:move;user-select:none;">
+            <iconify-icon icon="ant-design:menu-outlined" class="icon-sm"></iconify-icon>
+            <span>Preview Options</span>
+        </button>
+        <div id="preview-options-menu"
+             class="hidden absolute left-0 top-full mt-1 w-64 rounded-lg border border-gray-600/70 bg-gray-900/60 backdrop-blur-md shadow-xl z-40 p-1.5 text-xs">
+            <div id="po-video-row" class="hidden px-2 py-1.5 rounded hover:bg-gray-800">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-gray-200">Video Sources</span>
+                    <button id="po-video-all" type="button"
+                            class="text-[10px] text-cyan-300 hover:text-white">All</button>
+                </div>
+                <div id="po-video-list" class="mt-1 space-y-1"></div>
+            </div>
+            <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                <span class="text-gray-200">Hand Skeleton</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-hand-skeleton" class="sr-only peer" checked>
+                    <div class="bg-gray-700 peer-checked:bg-cyan-600 rounded-full relative transition-colors"
+                         style="width:32px;height:18px">
+                        <div class="absolute left-0.5 top-0.5 bg-white rounded-full transition-transform peer-checked:translate-x-[14px]"
+                             style="width:14px;height:14px"></div>
+                    </div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                <span class="text-gray-200">Hand Trail</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-hand-trail" class="sr-only peer">
+                    <div class="bg-gray-700 peer-checked:bg-cyan-600 rounded-full relative transition-colors"
+                         style="width:32px;height:18px">
+                        <div class="absolute left-0.5 top-0.5 bg-white rounded-full transition-transform peer-checked:translate-x-[14px]"
+                             style="width:14px;height:14px"></div>
+                    </div>
+                </label>
+            </div>
+            <div id="po-glove-row" class="hidden flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                <span class="text-gray-200">Glove Sensor</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-glove-sensor" class="sr-only peer" checked>
+                    <div class="bg-gray-700 peer-checked:bg-emerald-600 rounded-full relative transition-colors"
+                         style="width:32px;height:18px">
+                        <div class="absolute left-0.5 top-0.5 bg-white rounded-full transition-transform peer-checked:translate-x-[14px]"
+                             style="width:14px;height:14px"></div>
+                    </div>
+                </label>
+            </div>
+            <div id="po-heatmap-row" class="hidden flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                <span class="text-gray-200" data-i18n="heatmap_toggle">Depth Heatmap</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-heatmap" class="sr-only peer" checked>
+                    <div class="bg-gray-700 peer-checked:bg-rose-600 rounded-full relative transition-colors"
+                         style="width:32px;height:18px">
+                        <div class="absolute left-0.5 top-0.5 bg-white rounded-full transition-transform peer-checked:translate-x-[14px]"
+                             style="width:14px;height:14px"></div>
+                    </div>
+                </label>
+            </div>
+            <div id="po-hand3d-world-row" class="hidden flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                <span class="text-gray-200" data-i18n="hand3d_world">3D Hand World</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-hand3d-world" class="sr-only peer" checked>
+                    <div class="bg-gray-700 peer-checked:bg-cyan-600 rounded-full relative transition-colors"
+                         style="width:32px;height:18px">
+                        <div class="absolute left-0.5 top-0.5 bg-white rounded-full transition-transform peer-checked:translate-x-[14px]"
+                             style="width:14px;height:14px"></div>
+                    </div>
+                </label>
+            </div>
+            <div id="preview-options-status" class="px-2 py-1 text-[10px] text-gray-500"></div>
+        </div>
+    </div>
+    <!-- The former top status row is intentionally hidden. Episode metadata,
+         sync warnings, and the current frame are shown in the right panel
+         and bottom controls instead. Keep the container for legacy fallback
+         code that still looks up #camera-tabs. -->
+    <div id="camera-tabs" class="hidden flex gap-2 px-4 pt-3 pb-0 border-b border-gray-800 items-center flex-shrink-0">
+        <span id="episode-info" class="hidden text-xs text-gray-400 items-center gap-2 py-1.5"></span>
+        <span id="frame-info-header" class="ml-auto text-xs font-mono text-gray-500 hidden">
+            Frame: <span id="detail-current-frame" class="text-green-400 font-bold">0</span>
+            / <span id="detail-total-frames" class="text-gray-400">0</span>
+        </span>
+    </div>
+    <!-- Input mismatch/missing-device details are shown in the episode detail
+         panel on the right. Do not place a warning banner over the video. -->
+    <!-- Source button bar — every asset (stereo group / cameras / gloves /
+         hand heatmaps) as a click-or-drag button above the canvas -->
+    <!-- Preview sources are controlled from Preview Options. Kept as a hidden
+         compatibility container for older drag/drop code. -->
+    <div id="source-bar" class="hidden"></div>
+    <div id="video-grid" class="flex-1 min-w-0 min-h-0 p-3 overflow-hidden flex items-center justify-center">
+        <div class="text-gray-600 text-center">
+            <div class="text-4xl mb-3"><iconify-icon icon="ant-design:video-camera-outlined"></iconify-icon></div>
+            <div data-i18n="select_episode">Select an episode to review →</div>
+        </div>
+    </div>
+    <!-- 批次加载遮罩:媒体组/全部播放器/帧数据/标注就绪前盖住画布,
+         防止加载未完成时用旧批次 fps 交互造成帧不对齐 -->
+    <div id="video-loading-overlay" class="hidden absolute inset-0 z-50 flex items-center justify-center"
+         style="background:rgba(2,6,23,.55);backdrop-filter:blur(2px);">
+        <div class="flex flex-col items-center gap-3">
+            <div class="w-10 h-10 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <div class="text-sm text-gray-300" data-i18n="loading">Loading…</div>
+        </div>
+    </div>
+
+    <!-- Hand gesture info bar -->
+    <div id="gesture-bar" class="flex-shrink-0 flex items-center gap-4 px-4 py-1.5 bg-gray-900/70 border-t border-gray-800 text-xs text-gray-400 font-mono hidden"></div>
+
+    <!-- Annotation markers are shown in review and annotation pages.
+         Review pages render them read-only. -->
+    <div id="annotation-timeline" class="hidden flex-shrink-0 px-3 pt-1.5 border-t border-gray-800 bg-gray-950/95">
+        <div class="timeline-row">
+            <div id="annotation-timeline-markers"></div>
+            <div aria-hidden="true"></div>
+        </div>
+    </div>
+    <!-- Playback row is shared by review and annotation pages. -->
+    <div id="frame-controls" class="hidden flex-shrink-0 px-3 pt-1.5 pb-1 border-t border-gray-800 bg-gray-950/95">
+        <div class="timeline-row">
+            <div id="annotation-timeline-track">
+                <div id="annotation-timeline-cursor" style="left:0%"></div>
+            </div>
+        </div>
+    </div>
+    <!-- 播放控件漂浮工具条:紧贴底部进度条/切片轨道的上方、右侧
+         (点开批次后显示,固定位不拖动)。按钮 id 与旧底部侧栏完全
+         一致,JS 绑定零改动;标注模式下随切片轨道高度自动上移。 -->
+    <div id="playback-toolbar" class="hidden" style="position:absolute;right:12px;bottom:44px;z-index:45;">
+        <div style="display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:10px;background:rgba(15,23,42,.55);backdrop-filter:blur(8px);border:1px solid rgba(55,65,81,.8);box-shadow:0 8px 24px rgba(0,0,0,.35);">
+            <button id="btn-skip-back-10" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Back 10 frames"><iconify-icon icon="ant-design:step-backward-outlined" class="icon-sm"></iconify-icon></button>
+            <button id="btn-step-back" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Back 1 frame"><iconify-icon icon="ant-design:left-outlined" class="icon-sm"></iconify-icon></button>
+            <button id="btn-play-all" onclick="togglePlayAll()" class="bg-blue-600 hover:bg-blue-500 text-white rounded text-xs flex items-center justify-center gap-1" title="Play all synchronized views" aria-pressed="false">
+                <iconify-icon data-play-icon icon="ant-design:caret-right-filled" class="icon-sm"></iconify-icon> <span class="play-label">Play</span>
+            </button>
+            <button id="btn-step-forward" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Forward 1 frame"><iconify-icon icon="ant-design:right-outlined" class="icon-sm"></iconify-icon></button>
+            <button id="btn-skip-forward-10" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Forward 10 frames"><iconify-icon icon="ant-design:step-forward-outlined" class="icon-sm"></iconify-icon></button>
+            <button id="btn-zoom-out" type="button" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Zoom out (mouse wheel)">−</button>
+            <span id="zoom-indicator" class="font-mono text-gray-400 flex-shrink-0" style="font-size:10px;min-width:34px;text-align:center;font-variant-numeric:tabular-nums;">1.0×</span>
+            <button id="btn-zoom-in" type="button" class="frame-control-button bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center" title="Zoom in (mouse wheel)">+</button>
+            <span id="annotation-timeline-frame" class="font-mono text-gray-300 flex-shrink-0 whitespace-nowrap" style="font-size:11px;font-variant-numeric:tabular-nums;">0 / 0</span>
+        </div>
+    </div>
+
+    <!-- Bionic Hand Sensor (kept hidden — heatmaps are draggable canvas tiles now) -->
+    <div id="heatmap-section" class="flex-shrink-0 border-t border-gray-800 px-4 py-2 hidden" style="display:none">
+        <div class="flex gap-2">
+            <div class="flex-1 text-center">
+                <div class="text-xs text-gray-500 mb-1" data-i18n="left_hand">Left Hand</div>
+                <img id="hand-left" src="" alt="Left Hand"
+                     class="rounded border border-gray-700 bg-gray-900"
+                     style="width:100%;height:95px;object-fit:contain">
+            </div>
+            <div class="flex-1 text-center">
+                <div class="text-xs text-gray-500 mb-1" data-i18n="right_hand">Right Hand</div>
+                <img id="hand-right" src="" alt="Right Hand"
+                     class="rounded border border-gray-700 bg-gray-900"
+                     style="width:100%;height:95px;object-fit:contain">
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Right: episode list / review panel / annotation editor -->
+<aside class="order-2 bg-gray-900 border-l border-gray-800 flex flex-col overflow-hidden" style="width:320px;min-width:320px">
+
+    <!-- 1. Header bar: count + sort (flex-shrink-0) -->
+    <div id="episode-filter-bar" class="px-2 py-1.5 border-b border-gray-800 flex items-center justify-between flex-shrink-0">
+        <span id="episode-list-count" class="text-xs text-gray-500"></span>
+        <button id="btn-toggle-select" title="Toggle selection mode"
+                class="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-xs px-2 py-0.5 rounded flex-shrink-0 transition-colors"
+                onclick="toggleSelectMode()">Select</button>
+        <button id="btn-sort-order" title="Toggle sort order"
+                class="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-xs px-2 py-0.5 rounded flex items-center gap-1 flex-shrink-0 transition-colors"
+                onclick="toggleSortOrder()">
+            <iconify-icon id="sort-order-icon" icon="ant-design:ordered-list-outlined" class="icon-sm"></iconify-icon>
+            <span id="sort-order-label">Name 1→N</span>
+        </button>
+    </div>
+    <!-- Hidden filter controls (programmatic access by nav tree / app.js) -->
+    <input type="hidden" id="filter-status" value="completed">
+    <input type="hidden" id="filter-task" value="">
+    <input type="hidden" id="search-input" value="">
+
+    <!-- 2. Episode list section (fills available space, independent scroll) -->
+    <div id="episode-list-section" class="flex-1 min-h-0 overflow-y-auto hide-scrollbar">
+        <!-- Select-all bar (only visible in reviewed mode) -->
+        <div id="select-all-bar" class="px-3 py-1.5 border-b border-gray-800 flex items-center justify-between hidden bg-gray-800/50">
+            <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this.checked)" class="w-3.5 h-3.5 rounded accent-blue-600">
+                <span id="select-all-label" data-i18n="select_all">Select All</span>
+                <span id="select-count" class="text-gray-500">(0/0)</span>
+            </label>
+        </div>
+        <!-- Episode cards -->
+        <div id="episode-list-inline">
+            <div class="p-4 text-center text-gray-500 text-sm" data-i18n="loading">Loading...</div>
+        </div>
+        <!-- Batch action bar -->
+        <div id="batch-bar" class="px-3 py-2 border-t border-gray-800 flex items-center justify-between hidden bg-gray-800">
+            <span id="batch-count" class="text-xs text-gray-300">0 selected</span>
+            <button onclick="batchDownload()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded font-medium">
+                <iconify-icon icon="ant-design:download-outlined" class="icon-sm"></iconify-icon> <span data-i18n="batch_download">Batch Download</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. Episode detail panel (flex-1, fills to bottom border when active) -->
+    <div id="episode-detail" class="flex-1 flex flex-col overflow-hidden hidden">
+        <!-- Back button + episode name -->
+        <div class="px-3 py-2 border-t border-gray-800 flex items-center gap-2 flex-shrink-0">
+            <button id="btn-back-to-list" title="Back to list"
+                    class="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors"
+                    onclick="backToList()">
+                <iconify-icon icon="ant-design:arrow-left-outlined" class="icon-sm"></iconify-icon>
+            </button>
+            <span id="detail-episode-name" class="text-sm font-medium text-gray-200 truncate"></span>
+            <span id="detail-status-badge" class="text-xs flex-shrink-0"></span>
+        </div>
+        <!-- Episode info (flex-shrink-0) -->
+        <div id="episode-detail-info" class="px-3 py-2 border-b border-gray-800 flex-shrink-0"></div>
+        <!-- Annotation information is shared by review and annotation pages;
+             only Annotation Studio mounts the editing controls. -->
+        <div class="px-3 py-2 border-t border-gray-800 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-1.5 text-xs font-medium text-gray-200">
+                <span data-i18n="slice_marker">Slice Markers</span>
+                <span id="anno-count" class="text-[10px] text-gray-500 bg-gray-800 rounded-full px-1.5 py-0.5">0</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <span class="{{ 'hidden' if page_mode == 'annotation' else '' }} text-[10px] text-gray-500 border border-gray-700 rounded px-1.5 py-0.5" data-i18n="annotation_readonly">只读</span>
+                <div class="{{ 'hidden' if page_mode != 'annotation' else '' }} flex items-center gap-1">
+                    <button id="btn-ai-annotate" type="button"
+                            class="hidden text-[11px] px-2 py-1 rounded border border-cyan-600/60 bg-cyan-900/20 text-cyan-300 hover:bg-cyan-900/40 transition-colors"
+                            title="AI 自动切段并提案标注(模式由工作流 AI Annotation 卡片配置决定)">
+                        <iconify-icon icon="ant-design:thunderbolt-outlined" class="icon-sm"></iconify-icon>
+                        <span data-i18n="ai_annotate">AI Annotate</span>
+                    </button>
+                    <button id="btn-undo-annotation" type="button"
+                            class="text-[11px] px-2 py-1 rounded border border-gray-600/70 bg-gray-800/40 text-gray-400 hover:bg-gray-800 transition-colors"
+                            title="Undo (Ctrl+Z)">
+                        <iconify-icon icon="ant-design:rollback-outlined" class="icon-sm"></iconify-icon>
+                        <span>Undo</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Annotation list (scrollable, flex-1) -->
+        <div id="episode-detail-annos" class="flex-1 min-h-0 overflow-y-auto hide-scrollbar p-2 space-y-1.5">
+            <div class="p-4 text-center text-gray-600 text-xs">
+                <iconify-icon icon="ant-design:scissor-outlined" class="text-lg mb-1"></iconify-icon>
+                <div data-i18n="no_slices">No slices yet</div>
+                <div class="text-[10px] text-gray-700 mt-1" data-i18n="no_slices_hint">Drag the timeline to create a marker range</div>
+            </div>
+        </div>
+        {% if page_mode == 'annotation' %}
+        <!-- Annotation form (flex-shrink-0, at bottom) -->
+        <div id="anno-form" class="border-t border-gray-800 p-2 flex-shrink-0">
+            <div class="bg-gray-800/90 border border-gray-700 rounded-lg p-2.5 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                    <span id="anno-form-title" class="text-gray-200 font-medium" data-i18n="current_slice">Current Slice</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <label class="text-[10px] text-gray-500"><span data-i18n="start_frame">Start Frame</span>
+                        <input id="anno-start-frame-input" type="number" min="0"
+                               class="mt-1 w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-gray-200 font-mono focus:border-red-500 focus:outline-none">
+                    </label>
+                    <label class="text-[10px] text-gray-500"><span data-i18n="end_frame">End Frame</span>
+                        <input id="anno-end-frame-input" type="number" min="0"
+                               class="mt-1 w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-gray-200 font-mono focus:border-blue-500 focus:outline-none">
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button id="btn-anno-set-start" type="button" data-i18n="set_start_frame" class="text-[10px] text-red-300 bg-red-900/20 border border-red-800/60 hover:bg-red-900/40 rounded py-1.5">Set Start</button>
+                    <button id="btn-anno-set-end" type="button" data-i18n="set_end_frame" class="text-[10px] text-blue-300 bg-blue-900/20 border border-blue-800/60 hover:bg-blue-900/40 rounded py-1.5">Set End</button>
+                </div>
+                <input id="anno-label-input"
+                       class="bg-gray-900 border border-gray-700 rounded px-2.5 py-2 w-full text-gray-200 text-xs focus:border-blue-500 focus:outline-none"
+                       data-i18n-placeholder="label_name" placeholder="Label name, e.g. pick up cup"
+                       oninput="this.classList.remove('border-red-500');document.getElementById('anno-label-warn').classList.add('hidden')">
+                <div id="anno-label-warn" class="text-red-400 text-xs hidden">
+                    <iconify-icon icon="ant-design:warning-outlined" class="icon-sm"></iconify-icon> <span data-i18n="enter_slice_name">Enter a slice name</span>
+                </div>
+                <div id="anno-frame-preview" class="bg-gray-900 rounded px-2.5 py-1.5 text-center text-[11px]"></div>
+                <button id="btn-save-annotation" type="button"
+                        class="w-full bg-gray-700 text-gray-500 py-2 rounded text-xs cursor-not-allowed font-medium transition-colors" disabled>
+                    <iconify-icon icon="ant-design:check-outlined" class="icon-sm"></iconify-icon>
+                    <span data-i18n="add_slice">Add Slice</span>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</aside>
+
+<script src="/static/js/media-cache.js?v=202609031715"></script>
+<script src="/static/js/depth-renderer.js?v=202609031715"></script>
+    <script src="/static/js/player.js?v=202609032000"></script>
+    <script src="/static/js/hand-overlay.js?v=202609031900"></script>
+<script src="/static/js/heatmap.js?v=202609031900"></script>
+    <script src="/static/js/annotations.js?v=202609032000"></script>
+<script src="/static/js/slice-preview.js?v=202609022015"></script>
+    <script src="/static/js/app.js?v=202609032200"></script>
+<script>
+    window.EGODATA_PAGE_MODE = {{ page_mode|tojson }};
+</script>
+{% endblock %}

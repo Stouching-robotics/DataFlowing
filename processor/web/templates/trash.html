@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Trash - Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col p-6 overflow-auto hide-scrollbar max-w-3xl mx-auto w-full">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold"><iconify-icon icon="ant-design:delete-outlined" class="icon-md"></iconify-icon> <span id="trash-title" data-i18n="trash_title">Trash</span></h2>
+        <button onclick="purgeTrash()"
+                class="bg-red-800 hover:bg-red-700 text-red-200 text-sm px-4 py-1.5 rounded">
+            <iconify-icon icon="ant-design:delete-outlined" class="icon-sm"></iconify-icon> <span id="trash-purge-btn" data-i18n="purge_all">Purge All</span>
+        </button>
+    </div>
+    <div id="trash-list" class="space-y-2">
+        <div class="p-4 text-center text-gray-500 text-sm" data-i18n="loading">Loading...</div>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+// Update template static text when lang changes
+const _origSetLang = setLang;
+setLang = function(lang) {
+    _origSetLang(lang);
+    document.getElementById('nav-review').textContent = t('video_review');
+    document.getElementById('nav-trash').innerHTML = '<iconify-icon icon="ant-design:delete-outlined" class="icon-sm"></iconify-icon> ' + t('trash');
+    document.title = t('trash_title') + ' - Data Acquisition';
+};
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('nav-review').textContent = t('video_review');
+    document.getElementById('nav-trash').innerHTML = '<iconify-icon icon="ant-design:delete-outlined" class="icon-sm"></iconify-icon> ' + t('trash');
+});
+</script>
+{% endblock %}

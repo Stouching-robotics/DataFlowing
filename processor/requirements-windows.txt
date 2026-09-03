@@ -1,0 +1,5 @@
+# Windows local post-processing environment (worker + GUI viewer host).
+# Keep this file separate so Windows wheels never replace the Linux worker env.
+-r requirements.txt
+# GUI viewer (needs a desktop session) is installed separately:
+#   pip install -r hdf5_demo/requirements.txt
