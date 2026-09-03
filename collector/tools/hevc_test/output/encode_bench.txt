@@ -1,0 +1,18 @@
+encode_bench  (ffmpeg: /home/stouch/collector/venv/lib/python3.12/site-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2)
+gate: per-stream fps >= 45  ->  x265 OK for 30fps recording
+
+resolution   encoder                   1-stream      2-stream      4-stream
+----------------------------------------------------------------------------
+1280x960     libx265 30             247.1(OK )   173.2(OK )    92.7(OK )
+1280x960     libx265 30             340.6(OK )   215.7(OK )   124.5(OK )
+1280x960     libx264 ultrafast      549.2(OK )   246.6(OK )   145.1(OK )
+1280x800     libx265 30             286.5(OK )   193.3(OK )   110.1(OK )
+1280x800     libx265 30             419.5(OK )   285.7(OK )   145.9(OK )
+1280x800     libx264 ultrafast      549.3(OK )   419.9(OK )   245.7(OK )
+1280x720     libx265 30             286.4(OK )   216.9(OK )   124.9(OK )
+1280x720     libx265 30             420.4(OK )   285.9(OK )   158.7(OK )
+1280x720     libx264 ultrafast      549.3(OK )   548.1(OK )   278.5(OK )
+
+OK  = per-stream fps >= 45 (x265 gate for 30fps recording)
+LOW = below gate -> auto-select falls back to x264
+NOTE: synthetic all-zero frames encode fastest; real frames are slower

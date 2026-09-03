@@ -1,0 +1,49 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+# 分发包的**构建模板**要入库（构建产物 dist/ 本身仍忽略）
+!tools/hand_3d_s80c/dist/
+build/
+data/recordings/
+data/*.db
+*.log
+.venv/
+venv/
+*.fifo
+*.h5
+*.mp4
+.DS_Store
+*.bak_*
+*.corrupted_*
+
+# 备份包/个人配置/生成数据
+*.tar.gz
+*.bak
+*.old
+*.parquet
+.vscode/
+.claude/
+keypoints_output/
+exports/
+tools/weights/
+wheels/          # scripts/pack_wheels.py 生成的离线部署包（不入库，拷给客户用）
+imgui.ini
+.polyscope.ini
+tools/stereo_s80m/offline_slam_output/
+tools/stereo_s80m/hand_benchmark/
+data/*.db-shm
+data/*.db-wal
+tools/demos/stereo_depth_demo/*.bin
+tools/demos/stereo_depth_demo/*.png
+tools/demos/stereo_depth_demo/build/
+
+# 本地私有配置（模板见 *.example.json）
+data/server_config.json
+data/device_names.json
+data/tasks.json
+
+# 真机标定（本地提取产物，跑 tools/hand_3d_d435/tools/extract_d435_color_calib.py 再生）
+tools/hand_3d_d435/calibration/
+pipeline.db

@@ -1,0 +1,165 @@
+{
+    "thumb_tip": {
+        "name": "大拇指-指肚",
+        "rows": [],
+        "cols": [],
+        "axis_order": "col_row"
+    },
+    "thumb_joint": {
+        "name": "大拇指-关节",
+        "rows": [
+            0,
+            1,
+            2
+        ],
+        "cols": [
+            14,
+            12,
+            13,
+            15
+        ],
+        "axis_order": "col_row"
+    },
+    "thumb_base": {
+        "name": "大拇指-指根",
+        "rows": [],
+        "cols": [],
+        "axis_order": "row_col"
+    },
+    "index_tip": {
+        "name": "食指-指肚",
+        "rows": [],
+        "cols": [],
+        "axis_order": "col_row"
+    },
+    "index_joint": {
+        "name": "食指-关节",
+        "rows": [
+            3,
+            4,
+            5
+        ],
+        "cols": [
+            14,
+            12,
+            13,
+            15
+        ],
+        "axis_order": "col_row"
+    },
+    "index_base": {
+        "name": "食指-指根",
+        "rows": [],
+        "cols": [],
+        "axis_order": "row_col"
+    },
+    "middle_tip": {
+        "name": "中指-指肚",
+        "rows": [],
+        "cols": [],
+        "axis_order": "col_row"
+    },
+    "middle_joint": {
+        "name": "中指-关节",
+        "rows": [
+            6,
+            7,
+            8
+        ],
+        "cols": [
+            14,
+            12,
+            13,
+            15
+        ],
+        "axis_order": "col_row"
+    },
+    "middle_base": {
+        "name": "中指-指根",
+        "rows": [],
+        "cols": [],
+        "axis_order": "row_col"
+    },
+    "ring_tip": {
+        "name": "无名指-指肚",
+        "rows": [],
+        "cols": [],
+        "axis_order": "col_row"
+    },
+    "ring_joint": {
+        "name": "无名指-关节",
+        "rows": [
+            9,
+            10,
+            11
+        ],
+        "cols": [
+            14,
+            12,
+            13,
+            15
+        ],
+        "axis_order": "col_row"
+    },
+    "ring_base": {
+        "name": "无名指-指根",
+        "rows": [],
+        "cols": [],
+        "axis_order": "row_col"
+    },
+    "pinky_tip": {
+        "name": "小拇指-指肚",
+        "rows": [],
+        "cols": [],
+        "axis_order": "col_row"
+    },
+    "pinky_joint": {
+        "name": "小拇指-关节",
+        "rows": [
+            12,
+            13,
+            14
+        ],
+        "cols": [
+            14,
+            12,
+            13,
+            15
+        ],
+        "axis_order": "col_row"
+    },
+    "pinky_base": {
+        "name": "小拇指-指根",
+        "rows": [],
+        "cols": [],
+        "axis_order": "row_col"
+    },
+    "palm": {
+        "name": "手掌心",
+        "rows": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+        ],
+        "cols": [
+            10,
+            9,
+            8,
+            6,
+            4
+        ],
+        "axis_order": "col_row"
+    }
+}

@@ -1,0 +1,471 @@
+<title>数据文件接口契约</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;650&family=Spline+Sans+Mono:wght@500;600;700&display=swap">
+<style>
+  :root {
+    --paper: #F3F5F2;
+    --surface: #FFFFFF;
+    --surface-2: #E9EEE9;
+    --ink: #17211F;
+    --ink-soft: #3D4A46;
+    --muted: #5E6B66;
+    --line: #D5DDD6;
+    --amber: #A85D0F;
+    --amber-soft: #F2E7D7;
+    --rec: #C2432E;
+    --code-bg: #EEF2EE;
+    --shadow: 0 1px 2px rgba(23, 33, 31, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101412;
+      --surface: #171C19;
+      --surface-2: #1F2621;
+      --ink: #E4E9E4;
+      --ink-soft: #C2CCC4;
+      --muted: #93A29A;
+      --line: #2A322C;
+      --amber: #E0A458;
+      --amber-soft: #2B2418;
+      --rec: #E06450;
+      --code-bg: #141916;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101412;
+    --surface: #171C19;
+    --surface-2: #1F2621;
+    --ink: #E4E9E4;
+    --ink-soft: #C2CCC4;
+    --muted: #93A29A;
+    --line: #2A322C;
+    --amber: #E0A458;
+    --amber-soft: #2B2418;
+    --rec: #E06450;
+    --code-bg: #141916;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Spline Sans", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.68;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 0 40px; }
+  .cols { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 48px; align-items: start; }
+
+  /* ── masthead ── */
+  .masthead { border-bottom: 1px solid var(--line); background: var(--surface); }
+  .masthead .wrap { padding-top: 44px; padding-bottom: 40px; }
+  .eyebrow {
+    font-family: "Spline Sans Mono", monospace; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--rec);
+    animation: pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(194, 67, 46, 0.45); }
+    70% { box-shadow: 0 0 0 9px rgba(194, 67, 46, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(194, 67, 46, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dot { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+  h1 {
+    font-family: "Spline Sans Mono", monospace; font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -0.01em;
+    margin: 14px 0 10px; text-wrap: balance; line-height: 1.25;
+  }
+  .sub { color: var(--muted); max-width: 62ch; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chip {
+    font-family: "Spline Sans Mono", monospace; font-size: 12.5px; font-weight: 600;
+    padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--paper); color: var(--ink-soft);
+  }
+  .chip.amber { border-color: var(--amber); color: var(--amber); background: var(--amber-soft); }
+
+  /* ── hero tree ── */
+  .hero { padding: 36px 0 8px; }
+  .tree {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 22px 26px; font-family: "Spline Sans Mono", monospace;
+    font-size: 13.5px; line-height: 1.75; overflow-x: auto; white-space: pre;
+    color: var(--ink-soft); box-shadow: var(--shadow);
+  }
+  .tree .k { color: var(--amber); font-weight: 600; }
+  .tree .c { color: var(--muted); }
+  .readout {
+    display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 18px;
+    font-family: "Spline Sans Mono", monospace; font-size: 13px; color: var(--muted);
+  }
+  .readout b { color: var(--amber); font-weight: 600; }
+  .readout span { font-variant-numeric: tabular-nums; }
+
+  /* ── TOC ── */
+  .toc { position: sticky; top: 24px; padding-top: 44px; }
+  .toc h2 {
+    font-family: "Spline Sans Mono", monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px;
+  }
+  .toc a {
+    display: block; text-decoration: none; color: var(--ink-soft);
+    font-size: 13.5px; padding: 3.5px 10px; border-left: 2px solid var(--line);
+    transition: border-color 0.12s ease, color 0.12s ease;
+  }
+  .toc a:hover { color: var(--amber); border-left-color: var(--amber); }
+  .toc a:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .toc .sec { font-family: "Spline Sans Mono", monospace; font-size: 11px; color: var(--muted); margin-right: 6px; }
+
+  /* ── main ── */
+  main { padding: 44px 0 40px; min-width: 0; }
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .sec-no {
+    font-family: "Spline Sans Mono", monospace; font-weight: 700; font-size: 15px;
+    color: var(--amber); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  h2 {
+    font-family: "Spline Sans Mono", monospace; font-weight: 700;
+    font-size: 20px; margin: 0; letter-spacing: 0.01em; text-wrap: balance;
+  }
+  h3 {
+    font-family: "Spline Sans Mono", monospace; font-weight: 600;
+    font-size: 15.5px; margin: 26px 0 10px; color: var(--ink);
+  }
+  p { max-width: 66ch; margin: 10px 0; }
+  ul, ol { max-width: 72ch; padding-left: 22px; margin: 10px 0; }
+  li { margin: 5px 0; }
+  a { color: var(--amber); }
+  strong { font-weight: 650; }
+  code, .inline-code {
+    font-family: "Spline Sans Mono", monospace; font-size: 0.88em;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px;
+    padding: 1px 6px; font-variant-numeric: tabular-nums; color: var(--ink-soft);
+  }
+  .tag {
+    display: inline-block; font-family: "Spline Sans Mono", monospace;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; vertical-align: 1px; margin-right: 4px;
+  }
+  .tag.must { background: var(--ink); color: var(--paper); }
+  .tag.should { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 18px 22px; overflow-x: auto; font-family: "Spline Sans Mono", monospace;
+    font-size: 13px; line-height: 1.7; margin: 14px 0; box-shadow: var(--shadow);
+    color: var(--ink-soft);
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
+  .tblwrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; background: var(--surface); }
+  th {
+    font-family: "Spline Sans Mono", monospace; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid var(--line); color: var(--ink-soft);
+    background: var(--surface-2); white-space: nowrap;
+  }
+  td {
+    padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top;
+    font-size: 14px; color: var(--ink-soft);
+  }
+  tr:last-child td { border-bottom: none; }
+  td code, th code { font-size: 0.85em; }
+  td:first-child, th:first-child { font-family: "Spline Sans Mono", monospace; font-size: 13px; white-space: nowrap; color: var(--ink); }
+  .note {
+    border-left: 3px solid var(--amber); background: var(--amber-soft);
+    padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 14px 0; max-width: 78ch;
+    font-size: 14.5px; color: var(--ink-soft);
+  }
+  .note b { color: var(--amber); font-family: "Spline Sans Mono", monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ref { color: var(--muted); font-size: 13.5px; }
+  footer {
+    border-top: 1px solid var(--line); padding: 26px 0 46px; color: var(--muted);
+    font-family: "Spline Sans Mono", monospace; font-size: 12.5px;
+  }
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+    .wrap { padding: 0 20px; }
+    main { padding-top: 12px; }
+  }
+</style>
+
+<div class="masthead">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span>录制数据落盘规范 · v1.1.2</div>
+    <h1>数据文件接口契约</h1>
+    <p class="sub">本文是录制数据落盘格式的规范性契约，供一切读写该数据的程序严格对齐：服务器导入器、离线处理工具、第三方数据读取器。标注 <span class="tag must">MUST</span> 的条目写入方必须产出、读取方必须容忍；<span class="tag should">SHOULD</span> 为建议。歧义以 core/helpers.py 与 core/egodata_writer.py 的实现为准。</p>
+    <div class="chips">
+      <span class="chip amber">format = "pooled_episodes_v1"</span>
+      <span class="chip">chunks_size = 1000</span>
+      <span class="chip">v1.1.0 起任务级池化</span>
+      <span class="chip">v1.1.1 stats 自含 count</span>
+      <span class="chip amber">v1.1.2 episode- 前缀命名</span>
+    </div>
+  </div>
+</div>
+
+<div class="hero wrap">
+  <pre class="tree">data/recordings/<span class="k">&lt;task&gt;</span>/                          <span class="c"># &lt;task&gt; = 任务清洗名（可含中文）</span>
+├── videos/
+│   └── chunk-{c:03d}/<span class="k">&lt;image_key&gt;</span>/episode-{f:03d}.{ext}
+├── data/
+│   └── chunk-{c:03d}/episode-{f:03d}.parquet
+└── meta/
+    ├── info.json
+    ├── stats.json
+    ├── tasks.jsonl
+    ├── recycled_episode.json               <span class="c"># 异常终止回退标记，见 §7.5</span>
+    └── episodes/
+        ├── .lock                            <span class="c"># 运行时锁锚点（旧分片回退路径），见 §7.4</span>
+        └── chunk-{c:03d}/episode-{f:03d}.parquet   <span class="c"># 每 episode 一个文件（单行）</span></pre>
+  <div class="readout">
+    <span>N = <b>1</b> → chunk-000 / episode-000</span>
+    <span>N = <b>1000</b> → chunk-000 / episode-999</span>
+    <span>N = <b>1001</b> → chunk-001 / episode-000</span>
+    <span>chunk = <b>(N−1) // 1000</b> · fnum = <b>(N−1) % 1000</b></span>
+  </div>
+</div>
+
+<div class="wrap cols">
+  <nav class="toc" aria-label="目录">
+    <h2>目录</h2>
+    <a href="#s1"><span class="sec">§1</span>顶层布局与格式判别</a>
+    <a href="#s2"><span class="sec">§2</span>编号规则</a>
+    <a href="#s3"><span class="sec">§3</span>meta/info.json</a>
+    <a href="#s4"><span class="sec">§4</span>meta/stats.json</a>
+    <a href="#s5"><span class="sec">§5</span>meta/tasks.jsonl</a>
+    <a href="#s6"><span class="sec">§6</span>meta/episodes/</a>
+    <a href="#s7"><span class="sec">§7</span>data/</a>
+    <a href="#s8"><span class="sec">§8</span>videos/</a>
+    <a href="#s9"><span class="sec">§9</span>上传 zip 契约</a>
+    <a href="#s10"><span class="sec">§10</span>关键点镜像布局</a>
+    <a href="#s11"><span class="sec">§11</span>不属于架构的文件</a>
+    <a href="#s12"><span class="sec">§12</span>对齐检查清单</a>
+  </nav>
+
+  <main>
+    <section id="s1">
+      <div class="sec-head"><span class="sec-no">§1</span><h2>顶层布局与格式判别</h2></div>
+      <ul>
+        <li><strong>格式判别</strong><span class="tag must">MUST</span>：读 <code>meta/info.json</code> 的 <code>format</code> 字段，<code>"pooled_episodes_v1"</code> 即本契约；<code>format</code> 缺失且存在 <code>&lt;task&gt;_NNNNNN</code> 子目录者为 v1.0 旧格式。</li>
+        <li>任务目录内<span class="tag must">MUST NOT</span>存在 <code>calibration/</code>、<code>metadata.json</code>、<code>timestamps.json</code>、每会话子目录（v1.0 遗留物）。</li>
+        <li><code>&lt;task&gt;</code> 即任务名；上传/项目语义中「会话名」概念废除，任务名即项目名。</li>
+      </ul>
+    </section>
+
+    <section id="s2">
+      <div class="sec-head"><span class="sec-no">§2</span><h2>编号规则</h2></div>
+      <p>全局 episode 序号 <strong>N 从 1 起递增</strong>（跨该任务全部 episode；权威 = data/videos 文件组扫描与 tasks.json 进度水位取 max）：</p>
+      <pre>chunk = (N - 1) // 1000     <span class="c"># chunk-000 装 N=1..1000</span>
+fnum  = (N - 1) % 1000      <span class="c"># 三位零起：episode-000 .. episode-999</span></pre>
+      <ul>
+        <li><code>chunks_size = 1000</code>（info.json 声明，服务器/工具按此计算，勿写死）。</li>
+        <li>同一 episode 的<span class="tag must">MUST</span>所有文件共用同一个 (chunk, fnum)：视频各流、data parquet、episodes 每段文件（episode-005 = 第 6 个 episode，全部同名）。</li>
+        <li><b>界面/上传的任务名后缀 = episode 文件号（0 基）</b>：第 N 段显示 <code>_ep{(N-1)%1000:06d}</code>（即 <code>_ep000011</code> = 本地 <code>episode-011</code>）。回放/上传界面显示名、zip 内 arcname、上传表单 <code>episode_index</code> 值<span class="tag must">MUST</span>三处同一号码（= 本地文件后缀）；真实全局序号 N 只出现在 parquet 的 <code>episode_index</code> 列，不靠界面名反推。</li>
+        <li><b>异常终止不占号</b>：GUI「异常终止」丢弃的录制不消耗序号——中止时写下 <code>meta/recycled_episode.json</code> 标记（§7.5），下一次录制优先复用该号（即使进度水位已跑在前面也不跳号）；正常完成即清标记。<b>删除（含上传后自动删除）不回退</b>：已完成的 episode 序号永不复用（服务器已持有该号）。</li>
+      </ul>
+      <div class="note"><b>旧分片命名残留（读侧 MUST 容忍）</b><br>
+        v1.1.0 早期曾用「每 chunk 一个分片」，分片文件名 = chunk 自身编号（chunk-000 → file-000.parquet，一个文件装该 chunk 内最多 1000 个 episode 的行）。该布局已废除，新写入一律每段一文件；读侧工具对旧分片按 <code>episode_index</code> 列过滤做回退，<strong>不靠文件名</strong>。v1.1.2 起每段文件前缀 <code>episode-</code>、分片保留 <code>file-</code> 前缀，两者路径不再重名。<code>scripts/migrate_pooled_storage.py --split-episodes</code> 可把旧分片原地拆成每段文件（幂等）。</div>
+    </section>
+
+    <section id="s3">
+      <div class="sec-head"><span class="sec-no">§3</span><h2>meta/info.json（任务级）</h2></div>
+      <p>单 JSON 对象（可读缩进，无单行约束）。字段：</p>
+      <div class="tblwrap"><table>
+        <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>format</code></td><td>str</td><td><code>"pooled_episodes_v1"</code>（格式判别键）</td></tr>
+        <tr><td><code>chunks_size</code></td><td>int</td><td><code>1000</code></td></tr>
+        <tr><td><code>data_path</code></td><td>str</td><td>模板 <code>data/chunk-{c:03d}/episode-{f:03d}.parquet</code></td></tr>
+        <tr><td><code>video_path</code></td><td>str</td><td>模板 <code>videos/chunk-{c:03d}/{image_key}/episode-{f:03d}.{ext}</code></td></tr>
+        <tr><td><code>episodes_path</code></td><td>str</td><td>模板 <code>meta/episodes/chunk-{c:03d}/episode-{f:03d}.parquet</code></td></tr>
+        <tr><td><code>codebase_version</code></td><td>str</td><td>数据代码基准版本（如 <code>"v3.0"</code>，沿用服务器侧语义）</td></tr>
+        <tr><td><code>app_version</code></td><td>str</td><td>主程序版本（如 <code>"1.1.0"</code>）</td></tr>
+        <tr><td><code>fps</code></td><td>float</td><td>录制帧率（如 <code>30.0</code>）</td></tr>
+        <tr><td><code>video</code></td><td>bool</td><td>是否含视频</td></tr>
+        <tr><td><code>task_name</code></td><td>str</td><td>任务名（= 目录名）</td></tr>
+        <tr><td><code>features</code></td><td>obj</td><td>只声明实际存在的列：<code>action</code> 恒在；<code>observation.&lt;sn&gt;</code> 每传感器一列；有 IMU 才有 <code>observation.imu</code>。形如 <code>{"action": {"dtype": "float32", "shape": [1]}, "observation.right_glove": {"dtype": "float32", "shape": [256]}}</code></td></tr>
+        <tr><td><code>cameras</code></td><td>obj</td><td>RGB 相机键 → <code>{height, width}</code>（深度槽不入 cameras，见 <code>video_extensions</code>）</td></tr>
+        <tr><td><code>devices</code></td><td>list</td><td>设备紧凑注册：<code>{key, kind, name, slots}</code>（kind: d435/s80m/uvc…；slots 为该设备的 image_key 列表）</td></tr>
+        <tr><td><code>device_names</code></td><td>obj</td><td>image_key → 设备显示名</td></tr>
+        <tr><td><code>sensors</code></td><td>list</td><td>任务级出现过的传感器名</td></tr>
+        <tr><td><code>sensor_dim</code></td><td>int</td><td>传感器观测维度（如 <code>256</code>）</td></tr>
+        <tr><td><code>created_at</code></td><td>float</td><td>任务创建时间（Unix 秒）</td></tr>
+        <tr><td><code>calibration</code></td><td>obj</td><td>任务级最新标定（每设备一键，如 <code>head_stereo</code>，内容为 <code>StereoCalibration.to_dict()</code> 规范化结构：<code>type/name/resolution/fps/baseline/left_camera/right_camera/depth_scale/cam_imu_timeshift</code>，相机内参为 <code>{intrinsic: [fx,fy,cx,cy], distortion: [...]}</code>）。多设备时以设备名/前缀消歧编号（<code>d435_rgb_calibration</code> 等）</td></tr>
+        <tr><td><code>total_episodes</code></td><td>int</td><td>当前 episode 数（上传删除不回退，见 §6）</td></tr>
+        <tr><td><code>video_extensions</code></td><td>obj</td><td>每个 image_key → 扩展名（RGB=<code>mp4</code>，深度=<code>mkv</code>）；深度是 mkv 不是 mp4，读侧<span class="tag must">MUST</span>按此判文件，勿按 <code>.mp4</code> 硬猜</td></tr>
+      </table></div>
+    </section>
+
+    <section id="s4">
+      <div class="sec-head"><span class="sec-no">§4</span><h2>meta/stats.json（任务级全局统计）</h2></div>
+      <p>单 JSON 对象。<strong>每块 {count, mean, std, min, max}，列表维度 = 列维度</strong>：</p>
+      <pre>{
+  "observation.right_glove": {"count": 1196, "mean": [...256], "std": [...],
+                              "min": [...], "max": [...]},
+  "observation.imu":         {"count": 9922, "mean": [...6], "std": [...],
+                              "min": [...], "max": [...]},
+  "action": {"count": 0, "mean": [0.0], "std": [1.0], "min": [0.0], "max": [0.0]}
+}</pre>
+      <ul>
+        <li><strong>count 是累加器契约</strong><span class="tag must">MUST</span>：<code>sum = mean × count</code>、<code>sum_sq = (std² + mean²) × count</code>。写入方在每个 episode 结束后读入现有 stats.json、按公式合并本 episode 统计、原子写回；文件自身即持久累加器，<strong>不存在任何边车</strong>（<code>.stats_state.json</code> 已废除，读到即旧版残留，忽略即可）。</li>
+        <li><span class="tag must">MUST</span><code>count</code> 恒存在。无 <code>count</code> 的块 = v1.1.0 旧格式，写入方须全量重扫 <code>data/</code> 重建一次再增量合并（参考 <code>core.helpers.recalc_stats</code>）。</li>
+        <li><code>action</code> 恒为占位块（<code>count:0</code>，仅声明列形状，不参与统计）。</li>
+        <li>只统计实际存在的列：帧级 <code>observation.&lt;sn&gt;</code>（逐行计数，含全零行）、样本级 <code>observation.imu</code>（按样本计数）；<code>observation.*hand_pose</code> 为恒写占位零列（后处理回填），不入统计。</li>
+        <li>语义：删除 episode 不回退 stats（与任务进度水位一致）；stats.json 是全任务聚合快照，不是逐 episode 重建值。</li>
+      </ul>
+    </section>
+
+    <section id="s5">
+      <div class="sec-head"><span class="sec-no">§5</span><h2>meta/tasks.jsonl（单行 JSONL 是格式契约）</h2></div>
+      <pre>{"task_index": 0, "task": "D435-裸手_3D手部关键点识别_AI标注"}</pre>
+      <ul>
+        <li><span class="tag must">MUST</span>每行一个完整 JSON 对象、且当前实现为单行；读取方必须 <code>json.loads(f.readline())</code> 逐行解析。禁止美化/多行重排——多行会静默破坏首行读取器（task_index 变 0）。写入方只在文件不存在时创建。</li>
+      </ul>
+    </section>
+
+    <section id="s6">
+      <div class="sec-head"><span class="sec-no">§6</span><h2>meta/episodes/（每段一个文件）</h2></div>
+      <h3>6.1 文件与原子性</h3>
+      <ul>
+        <li>每 episode 一个文件 <code>chunk-{c:03d}/episode-{f:03d}.parquet</code>（与 data/videos 同编号：episode-000 = episode 1），<strong>恒 1 行</strong>（10 列，见 §6.2）。</li>
+        <li>episode 结束时单行原子写：临时文件 + <code>os.replace</code> 原子替换；同号重录 = 覆盖该文件。读取方<span class="tag must">MUST</span>容忍文件在任意时刻被原子替换（每次打开重新读取，勿缓存 fd）。</li>
+        <li>新布局写入<span class="tag must">MUST NOT</span>依赖 flock（单文件原子替换即完整）；flock 锚点 <code>.lock</code> 仅剩旧分片回退的读-改-写路径使用（见 §7.4）。</li>
+        <li><b>旧分片回退（读侧<span class="tag must">MUST</span>容忍）</b>：v1.1.0 早期目录可能存在「每 chunk 一个分片」（文件名 = chunk 编号，≤1000 行，行序按 <code>episode_index</code> 升序）。读侧定位行必须按 <code>episode_index</code> 列过滤、<strong>不靠文件名</strong>（v1.1.2 起分片保留 file- 前缀、每段文件改 episode- 前缀，路径不再重名）。迁移工具 <code>--split-episodes</code> 可原地拆分（幂等）。</li>
+      </ul>
+      <h3>6.2 列（10 列）</h3>
+      <div class="tblwrap"><table>
+        <tr><th>列</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>episode_index</code></td><td>int64</td><td>全局序号 N（1 起）</td></tr>
+        <tr><td><code>task_index</code></td><td>int64</td><td>任务序号（现恒 0）</td></tr>
+        <tr><td><code>start_frame_index</code></td><td>int64</td><td>首帧 frame_index</td></tr>
+        <tr><td><code>end_frame_index</code></td><td>int64</td><td>末帧 frame_index</td></tr>
+        <tr><td><code>length</code></td><td>int64</td><td>帧数 = data parquet 行数</td></tr>
+        <tr><td><code>created_at</code></td><td>float64</td><td>episode 开始时间（Unix 秒）</td></tr>
+        <tr><td><code>duration_sec</code></td><td>float64</td><td>时长（秒）</td></tr>
+        <tr><td><code>drop_stats</code></td><td>str</td><td>JSON 字符串（如 <code>{"imu_overflow": 0}</code>），读取方须 <code>json.loads</code></td></tr>
+        <tr><td><code>video_codec</code></td><td>str</td><td>JSON 字符串：本机原始编码信息（encoder/codec/crf/ffmpeg 路径/probe）；上传 zip 中的 mp4 可能已被再编码，见 §8</td></tr>
+        <tr><td><code>calibration</code></td><td>str</td><td>JSON 字符串：本 episode 标定（结构与 info.json 的 calibration 同型），保每 episode 标定保真</td></tr>
+      </table></div>
+    </section>
+
+    <section id="s7">
+      <div class="sec-head"><span class="sec-no">§7</span><h2>data/（每 episode 一个 parquet）</h2></div>
+      <p><code>data/chunk-{c:03d}/episode-{f:03d}.parquet</code>，zstd 压缩，稀疏列（有数据才写该列）。</p>
+      <h3>7.1 键列（恒有）</h3>
+      <div class="tblwrap"><table>
+        <tr><th>列</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>episode_index</code></td><td>int64</td><td>= N</td></tr>
+        <tr><td><code>frame_index</code></td><td>int64</td><td>帧内序号，0 起递增，无空洞（abort 不落盘）</td></tr>
+        <tr><td><code>timestamp</code></td><td>float32</td><td>墙钟相对秒（episode 内相对，f32 精度够）</td></tr>
+        <tr><td><code>task_index</code></td><td>int64</td><td>现恒 0</td></tr>
+        <tr><td><code>wall_time</code></td><td>float64</td><td>绝对 Unix 秒（宿主时钟锚）</td></tr>
+        <tr><td><code>hardware_ns</code></td><td>int64</td><td>设备时钟硬件时间戳（ns，可绕回）；IMU 挂靠基准</td></tr>
+      </table></div>
+      <h3>7.2 观测列（稀疏）</h3>
+      <div class="tblwrap"><table>
+        <tr><th>列</th><th>类型</th><th>说明</th></tr>
+        <tr><td><code>observation.&lt;sn&gt;</code></td><td>list&lt;float32, 256&gt;</td><td>每帧一个传感器读数（维度 = info.json <code>sensor_dim</code>）</td></tr>
+        <tr><td><code>imu_ts_ns</code></td><td>list&lt;int64&gt;</td><td>与 <code>observation.imu</code> 一一对应的样本时间戳</td></tr>
+        <tr><td><code>observation.imu</code></td><td>list&lt;list&lt;float32, 6&gt;&gt;</td><td>挂在帧行上的变长样本列表（1000Hz/400Hz 只是 list 长短变化）</td></tr>
+        <tr><td><code>observation.left_hand_pose</code></td><td>list&lt;float32, 63&gt;</td><td>恒写占位零，后处理回填（裸手 63 维 world landmarks）</td></tr>
+        <tr><td><code>observation.right_hand_pose</code></td><td>list&lt;float32, 63&gt;</td><td>同上</td></tr>
+        <tr><td><code>action</code></td><td>list&lt;float32, 1&gt;</td><td>恒写（现为 0）</td></tr>
+        <tr><td><code>status.&lt;did&gt;</code></td><td>str</td><td>稀疏设备状态列（<code>"connected"</code>/<code>"disconnected"</code> 等）</td></tr>
+      </table></div>
+      <h3>7.3 时间对齐模型</h3>
+      <p><strong>表为帧行为主</strong>：一行 = 一个 30fps 帧；视频帧/传感器读数/帧行共用同一 <code>frame_index</code>（写入线程同拍产出）。IMU 为变长 list 列挂在帧行上，录制时按 <code>hardware_ns</code> 设备时钟窗口挂靠。读取零重采样；宿主时间锚定靠 <code>timestamp</code> + <code>wall_time</code>。客户 9 列平表由导出工具展开插值合成，非本契约内容。</p>
+      <h3>7.4 meta/episodes/.lock（运行时辅助文件，非数据）</h3>
+      <p><code>meta/episodes/.lock</code> 是空文件，flock 锁锚点——旧分片回退的读-改-写用 <code>os.replace</code> 原子替换（inode 变化），锁必须挂在路径不变的锚文件上，故锚点为空文件、锁在 fd 上而非文件内容。新布局的每段文件写入是单文件原子替换，不走该锁。其他程序<span class="tag must">MUST</span>忽略该文件（不解析、不打包、不告警）；上传 zip 不含它（dotfiles 一律不进包）。</p>
+      <h3>7.5 meta/recycled_episode.json（异常终止回退标记，非数据）</h3>
+      <p>内容为单 JSON 对象 <code>{"episode_index": &lt;int&gt;, "freed_at": "&lt;ISO&gt;"}</code>。录制被「异常终止」时由写入器<strong>原子写入</strong>（临时件 + <code>os.replace</code>），标记该序号可复用；下一次录制取号时若该号未被文件组占用则<strong>优先复用</strong>；录制正常完成时清除，号已被占（跨机共享目录/遗留）时自动放弃。删除即彻底删除（v1.1.2 起无 <code>_trash/</code> 回收区）。删除（含上传后自动删除）<strong>不写</strong>该标记——已完成的序号永不复用（见 §2）。其他程序<span class="tag must">MUST</span>忽略该文件（不解析、不打包、不告警）；上传 zip 不含它。</p>
+    </section>
+
+    <section id="s8">
+      <div class="sec-head"><span class="sec-no">§8</span><h2>videos/（每 episode 每流一文件）</h2></div>
+      <ul>
+        <li>路径 <code>videos/chunk-{c:03d}/&lt;image_key&gt;/episode-{f:03d}.{ext}</code>，<code>&lt;image_key&gt;</code> 为槽名。同任务内不同 episode 之间允许槽改名（如 ep1 用 <code>D435_depth_rgb</code>、ep2 用 <code>D435_head_rgb</code>）——读侧<span class="tag must">MUST</span>按 episodes 行的 image_key 枚举，勿假设任务级固定集合。</li>
+        <li>扩展名以 info.json <code>video_extensions</code> 为准：RGB=<code>mp4</code>（HEVC/h264），深度=<code>mkv</code>。</li>
+        <li><strong>深度 MKV 两种布局</strong>（读侧<span class="tag must">MUST</span>都支持，用 ffprobe/ffmpeg 的 stderr 探测 FFV1 流号）：
+          <ul>
+            <li><strong>双流</strong>（v1.0.14+ 录制直出）：流0 = 热力图 H.264（默认播放画面），流1 = FFV1 <code>gray16le</code> 无损 uint16 毫米深度；</li>
+            <li><strong>单流</strong>（迁移合成）：仅一个 FFV1 <code>gray16le</code> 流。</li>
+          </ul>
+        </li>
+        <li>RGB 的 <code>_aux</code> 类辅助流归主 key 同一目录，非主键可忽略。</li>
+      </ul>
+      <div class="note"><b>上传预压缩</b><br>zip 内 mp4 可能已被再编码为 HEVC（hvc1, CRF30）以缩小体积，与 episodes 行 <code>video_codec</code>（描述本机原始编码）不必一致；mkv 深度永不再编码。</div>
+    </section>
+
+    <section id="s9">
+      <div class="sec-head"><span class="sec-no">§9</span><h2>上传 zip 契约（给服务器导入器）</h2></div>
+      <p><code>POST /api/v1/session/upload</code>，端点不变。<code>name</code> 语义 = <strong>任务名</strong>，form 字段 <code>episode_index</code>（字符串化的 <strong>episode 文件号</strong>——0 基，与本 episode 的 <code>episode-{f:03d}</code> 完全一致，见 §2「任务名后缀」；真实全局序号 N 以包内 parquet 的 <code>episode_index</code> 列为准；旧服务器忽略未知字段）。</p>
+      <p>zip = <strong>单 episode 切片</strong>，包内 arcname 与原池化目录完全一致（相对任务目录）：</p>
+      <pre>videos/chunk-{c:03d}/&lt;key&gt;/episode-{f:03d}.{ext}    <span class="c"># 仅本 episode 的各流文件</span>
+data/chunk-{c:03d}/episode-{f:03d}.parquet          <span class="c"># 本 episode 数据</span>
+meta/episodes/chunk-{c:03d}/episode-{f:03d}.parquet <span class="c"># 本 episode 单行文件直传</span>
+meta/info.json                                    <span class="c"># 任务级快照</span>
+meta/stats.json                                   <span class="c"># 任务级快照（v1.1.1 含 count）</span>
+meta/tasks.jsonl                                  <span class="c"># 任务级</span></pre>
+      <ul>
+        <li><span class="tag must">MUST</span>dotfiles（<code>.lock</code>、临时件）不进包；episodes 直传本 episode 的单行文件（旧分片回退时打成单行切片，arcname 同为新命名）。</li>
+        <li>导入器以 <code>info.json.format == "pooled_episodes_v1"</code> 识别新格式。</li>
+        <li>上传删除 = 删该 episode 文件组（videos/data 各 key 本 episode 文件），episodes 行、stats、total_episodes 不回退。</li>
+      </ul>
+    </section>
+
+    <section id="s10">
+      <div class="sec-head"><span class="sec-no">§10</span><h2>关键点镜像布局（keypoints_output/）</h2></div>
+      <p>后处理产物（手部关键点）按同一池化键镜像存放，与录制目录解耦：</p>
+      <pre>keypoints_output/&lt;task&gt;/episode_{N:06d}/
+├── hand_pose/chunk-000.parquet        <span class="c"># 2D 关键点（MediaPipe 后端）</span>
+├── auto_labels/auto_labels.parquet    <span class="c"># 自动标注</span>
+└── hand_pose_3d/chunk-000.parquet     <span class="c"># 3D 关键点（bare 63 维 world landmarks，
+                                       #   回填 data parquet 两列的来源）</span></pre>
+      <p>镜像目录内文件名不含 episode 号（父目录已键控），按帧 <code>frame_index</code> 与 data parquet 对齐。</p>
+    </section>
+
+    <section id="s11">
+      <div class="sec-head"><span class="sec-no">§11</span><h2>不属于架构的文件（忽略/不得依赖）</h2></div>
+      <div class="tblwrap"><table>
+        <tr><th>文件/目录</th><th>说明</th></tr>
+        <tr><td><code>meta/episodes/.lock</code></td><td>运行时 flock 锚点，恒空</td></tr>
+        <tr><td><code>meta/recycled_episode.json</code></td><td>异常终止回退标记（§7.5），完成即删</td></tr>
+        <tr><td><code>meta/.stats_state.json</code></td><td>v1.1.0 边车残留，已废除，见即删</td></tr>
+        <tr><td><code>_trash/</code></td><td>v1.1.1 及更早应用内删除的回收区残留；v1.1.2 起删除即彻底删除，不再产生</td></tr>
+        <tr><td><code>.{name}.tmp</code></td><td>原子写临时件（<code>os.replace</code> 前身）</td></tr>
+        <tr><td><code>_episodes_{task_id}_{N}.parquet</code></td><td>上传打包临时切片（仅旧分片回退路径产生），打完即删</td></tr>
+        <tr><td><code>_migrate_backup_*</code></td><td>一次性迁移备份目录</td></tr>
+      </table></div>
+    </section>
+
+    <section id="s12">
+      <div class="sec-head"><span class="sec-no">§12</span><h2>对齐检查清单（新程序接入逐项验证）</h2></div>
+      <ol>
+        <li>读 <code>info.json</code> 判 <code>format=="pooled_episodes_v1"</code>，未知 format 报错不猜。</li>
+        <li>路径全部经模板 + (N→chunk,file) 计算，勿扫描拼接；<code>chunks_size</code> 读 info.json。</li>
+        <li>episodes 每段一个文件（file 编号 = data/videos 同编号）；旧目录的多行分片按 <code>episode_index</code> 列过滤回退，勿按文件名对齐。</li>
+        <li>stats.json 每块必有 <code>count</code>；无 count 的旧块触发全量重算或忽略并告警。</li>
+        <li>tasks.jsonl 逐行 <code>json.loads</code>，写回保持单行。</li>
+        <li>深度文件按 <code>video_extensions</code> 判 mkv，FFV1 流号探测，双流/单流都支持。</li>
+        <li>视频槽名按 episodes 行枚举，容忍跨 episode 槽改名。</li>
+        <li>dotfiles 与临时件一律忽略；上传 zip arcname 与池化目录一致、episodes 带本 episode 单行文件、<code>name</code>=任务名 + form <code>episode_index</code>。</li>
+        <li>IMU 是变长 list 列，读取端展开时按 <code>imu_ts_ns</code> 对齐，勿假设固定采样率行宽。</li>
+        <li>新布局 episodes 写入 = 单文件临时件 + os.replace 原子替换（无需 flock）；旧分片回退的读-改-写必须走 flock（POSIX）+ 临时文件 + os.replace。</li>
+      </ol>
+    </section>
+
+    <footer>
+      数据文件接口契约 v1.1.2 · 基准实现 core/helpers.py / core/egodata_writer.py · 仓库版 docs/file_format.md
+    </footer>
+  </main>
+</div>

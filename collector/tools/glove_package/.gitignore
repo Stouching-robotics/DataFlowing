@@ -1,0 +1,14 @@
+.venv/
+*.pt
+*.onnx
+dataset/
+runs/
+captures*/
+to_label/
+viz_auto/
+viz_eval/
+verify_pose_out/
+debug/
+__pycache__/
+*.pyc
+.DS_Store

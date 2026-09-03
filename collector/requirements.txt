@@ -1,0 +1,20 @@
+# ── 主程序 GUI 必需依赖（start.bat / start.sh 一键部署与本清单一致）──
+PyQt5>=5.15.0
+numpy>=1.24
+opencv-python>=4.10      # cv2 在 ui/core 顶层 import，主程序启动必需
+pyarrow>=14.0.0
+imageio-ffmpeg>=0.5.0
+bleak>=0.20.0
+qt-material>=2.14
+h5py>=3.10
+requests>=2.28
+pygrabber>=0.2          # Windows UVC 设备枚举
+comtypes>=1.4           # pygrabber 依赖
+pyvista>=0.42
+pyvistaqt>=0.11
+
+# ── 可选依赖（代码内惰性导入，缺失时对应功能不可用）──
+# 一键安装: start.bat extras / start.bat extras-torch
+# pyrealsense2          # Intel D435/D405 深度相机
+# mediapipe             # 裸手 3D 关键点（bare 模式）
+# torch                 # 手部关键点 RTMPose 后端（CPU 版安装见 `start.bat extras-torch`）

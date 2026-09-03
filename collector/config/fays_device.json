@@ -1,0 +1,13 @@
+{
+  "model": "FS-VI80-S80C",
+  "serial": "3500000262190088",
+  "firmware": "1.2.5",
+  "camera_count": 2,
+  "imu_count": 1,
+  "sdk_version": "3.9.0",
+  "stereo_dev_port": "/dev/video0",
+  "imu_dev_port": "/dev/video2",
+  "physical_usb_path": "2-3.2",
+  "usb_speed_mbps": 5000,
+  "captured_at": "2026-08-26T09:09:04.671267+00:00"
+}

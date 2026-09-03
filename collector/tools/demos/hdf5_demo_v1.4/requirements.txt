@@ -1,0 +1,5 @@
+# HDF5 演示播放器依赖 (python3 -m pip install -r requirements.txt)
+numpy
+h5py
+PyQt5
+opencv-python

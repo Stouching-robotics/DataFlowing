@@ -1,0 +1,5 @@
+# 换行符规范化：保证 GitLab 下载后 bat 可直接双击运行
+*.bat text eol=crlf
+*.sh  text eol=lf
+*.py  text eol=lf
+*.md  text eol=lf

@@ -1,0 +1,20 @@
+# S80C 双目手部关键点实时 demo —— 必装依赖（裸手模式完整可用，CPU 即可）
+# 实测版本：Ubuntu 22.04 / Python 3.12.3
+numpy==2.5.2
+opencv-python==5.0.0
+mediapipe==1.0.0
+
+# ── 可选：黑手套模式（--glove），按需取消注释 ──
+# YOLO-World 检测框（torch/ultralytics）：
+#   NVIDIA GPU：torch 装 CUDA 版（装法见 https://pytorch.org/get-started/locally/）
+#   CPU：pip install torch（无 GPU 也能跑，检测框 ~85ms/帧 vs GPU ~12ms/帧）
+# torch==2.13.0
+# ultralytics==8.4.121
+# RTMPose 关键点（onnxruntime，无 NVIDIA GPU 请用 onnxruntime 代替
+# onnxruntime-gpu；GPU 版在无 GPU 机器上也会自动回退 CPU）：
+# rtmlib
+# onnxruntime-gpu==1.29.0
+
+# ── 可选：--export 导出 ──
+# pyarrow==25.0.0
+# （另需系统 ffmpeg：PATH 可找到即可，或 export FFMPEG_BIN=/path/to/ffmpeg）

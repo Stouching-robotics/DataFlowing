@@ -1,0 +1,51 @@
+========================================================================
+  Episode 9 SLAM 对比 (更新数据 2026-08-28)
+  轨迹文件: online (/tmp/ep9cmp2/episode_9/episode_0000/results/trajectory/trajectory_online_style.txt)
+  对比模式: 以 episode_9 为基准
+========================================================================
+
+[各档质量]
+  episode_9                    帧数  365  时长  13.84s  路径  5.09m  最大位移  0.42m  跟踪 365/419.0 (87%)  最大间隙 0.7s
+  episode_9_crf28              帧数  370  时长  13.84s  路径  4.22m  最大位移  0.46m  跟踪 370/419.0 (88%)  最大间隙 0.6s
+  episode_9_crf30              帧数  324  时长  13.84s  路径  3.68m  最大位移  0.48m  跟踪 324/419.0 (77%)  最大间隙 0.7s
+  episode_9_crf34              帧数  353  时长  13.84s  路径  2.24m  最大位移  0.49m  跟踪 353/419.0 (84%)  最大间隙 1.2s
+  episode_9_crf37              帧数  367  时长  13.84s  路径  4.34m  最大位移  0.46m  跟踪 367/419.0 (88%)  最大间隙 0.6s
+
+
+[轨迹对比] (基准 → 被测; 位移 RPE 单位 mm, 旋转 RPE 单位 °)
+  基准 → 被测                                        Δ=0.5s     Δ=1.0s     Δ=2.0s   ATE RMSE
+  episode_9 → episode_9_crf28                t 25.0mm/r 2.67°  t 27.8mm/r 2.90°  t 31.9mm/r 3.72°     29.2mm
+  episode_9 → episode_9_crf30                t 33.6mm/r 2.64°  t 48.1mm/r 3.84°  t 46.0mm/r 4.90°     57.5mm
+  episode_9 → episode_9_crf34                t 49.6mm/r 4.12°  t 70.2mm/r 5.34°  t 107.0mm/r 7.21°    234.6mm
+  episode_9 → episode_9_crf37                t 33.0mm/r 3.00°  t 37.1mm/r 3.33°  t 41.1mm/r 4.32°     42.1mm
+
+  最大偏差(公共时间轴上, 未对齐):
+    episode_9 → episode_9_crf28                位置   17.6mm(均) /    128mm(峰) | 旋转  1.97°(均) /  20.3°(峰)
+    episode_9 → episode_9_crf30                位置   25.5mm(均) /    319mm(峰) | 旋转  2.58°(均) /  33.3°(峰)
+    episode_9 → episode_9_crf34                位置  223.9mm(均) /    569mm(峰) | 旋转 18.03°(均) /  43.7°(峰)
+    episode_9 → episode_9_crf37                位置   23.3mm(均) /    195mm(峰) | 旋转  2.52°(均) /  26.9°(峰)
+
+========================================================================
+  [总结]
+========================================================================
+  对比基准: episode_9
+  对比对象: 5 档 → episode_9, episode_9_crf28, episode_9_crf30, episode_9_crf34, episode_9_crf37
+
+  跟踪完整度排序 (输入 419.0 帧):
+    1. episode_9_crf28               88.3%  (370/419.0)  最大间隙 0.6s
+    2. episode_9_crf37               87.6%  (367/419.0)  最大间隙 0.6s
+    3. episode_9                     87.1%  (365/419.0)  最大间隙 0.7s
+    4. episode_9_crf34               84.2%  (353/419.0)  最大间隙 1.2s
+    5. episode_9_crf30               77.3%  (324/419.0)  最大间隙 0.7s
+
+  轨迹差异 (以 RPE@0.5s 平移排序, 低 = 更接近基准):
+    episode_9 → episode_9_crf28                          RPE   25.0mm /  2.67°  ATE   29.2mm
+    episode_9 → episode_9_crf37                          RPE   33.0mm /  3.00°  ATE   42.1mm
+    episode_9 → episode_9_crf30                          RPE   33.6mm /  2.64°  ATE   57.5mm
+    episode_9 → episode_9_crf34                          RPE   49.6mm /  4.12°  ATE  234.6mm
+
+  → 与基准差异最小: episode_9 → episode_9_crf28  (RPE@0.5s 25.0mm, ATE 29.2mm)
+  → 与基准差异最大: episode_9 → episode_9_crf34  (RPE@0.5s 49.6mm, ATE 234.6mm)
+
+  结论: 各档位跟踪完整度基本可用 (最低 episode_9_crf30 77%), 存在轻微跟踪损失, 建议在可接受误差内选择压缩率更高的一档。
+

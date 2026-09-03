@@ -1,0 +1,52 @@
+========================================================================
+  Episode SLAM 对比 (视频压缩档)
+  轨迹文件: online (/tmp/ep9cmp/episode_9.zip.new/episode_0000/results/trajectory/trajectory_online_style.txt)
+  对比模式: 以 episode_9.zip.new 为基准
+========================================================================
+
+[各档质量]
+  episode_9.zip.new            帧数  148  时长  12.54s  路径  1.41m  最大位移  0.49m  跟踪 148/419.0 (35%)  最大间隙 5.2s
+  episode_9_crf28.zip.new      帧数  140  时长  11.28s  路径  1.27m  最大位移  0.29m  跟踪 140/419.0 (33%)  最大间隙 5.2s
+  episode_9_crf30.zip.new      帧数  104  时长   8.80s  路径  1.06m  最大位移  0.33m  跟踪 104/419.0 (25%)  最大间隙 5.1s
+  episode_9_crf34.zip.new      帧数  111  时长   9.80s  路径  2.29m  最大位移  1.01m  跟踪 111/419.0 (26%)  最大间隙 5.1s
+  episode_9_crf37.zip.new      帧数  109  时长   8.94s  路径  2.75m  最大位移  1.46m  跟踪 109/419.0 (26%)  最大间隙 5.1s
+
+
+[轨迹对比] (基准 → 被测; 位移 RPE 单位 mm, 旋转 RPE 单位 °)
+  基准 → 被测                                        Δ=0.5s     Δ=1.0s     Δ=2.0s   ATE RMSE
+  episode_9.zip.new → episode_9_crf28.zip.new t 11.1mm/r 0.70°  t 15.5mm/r 0.85°  t 26.8mm/r 1.01°     17.6mm
+  episode_9.zip.new → episode_9_crf30.zip.new t 10.1mm/r 0.78°  t 14.3mm/r 1.10°  t 18.3mm/r 0.76°     17.7mm
+  episode_9.zip.new → episode_9_crf34.zip.new t 92.8mm/r 0.81°  t 263.1mm/r 1.07°  t 46.1mm/r 0.91°    339.9mm
+  episode_9.zip.new → episode_9_crf37.zip.new t 57.4mm/r 1.43°  t 87.9mm/r 1.85°  t 22.2mm/r 0.60°    176.0mm
+
+  最大偏差(公共时间轴上, 未对齐):
+    episode_9.zip.new → episode_9_crf28.zip.new 位置    9.8mm(均) /    116mm(峰) | 旋转  0.51°(均) /   3.4°(峰)
+    episode_9.zip.new → episode_9_crf30.zip.new 位置    6.5mm(均) /    139mm(峰) | 旋转  0.48°(均) /   5.5°(峰)
+    episode_9.zip.new → episode_9_crf34.zip.new 位置  144.7mm(均) /   1080mm(峰) | 旋转  0.65°(均) /   4.5°(峰)
+    episode_9.zip.new → episode_9_crf37.zip.new 位置   41.8mm(均) /   1371mm(峰) | 旋转  0.97°(均) /  13.0°(峰)
+
+========================================================================
+  [总结]
+========================================================================
+  对比基准: episode_9.zip.new
+  对比对象: 5 档 → episode_9.zip.new, episode_9_crf28.zip.new, episode_9_crf30.zip.new, episode_9_crf34.zip.new, episode_9_crf37.zip.new
+
+  跟踪完整度排序 (输入 419.0 帧):
+    1. episode_9.zip.new             35.3%  (148/419.0)  最大间隙 5.2s
+    2. episode_9_crf28.zip.new       33.4%  (140/419.0)  最大间隙 5.2s
+    3. episode_9_crf34.zip.new       26.5%  (111/419.0)  最大间隙 5.1s
+    4. episode_9_crf37.zip.new       26.0%  (109/419.0)  最大间隙 5.1s
+    5. episode_9_crf30.zip.new       24.8%  (104/419.0)  最大间隙 5.1s
+
+  轨迹差异 (以 RPE@0.5s 平移排序, 低 = 更接近基准):
+    episode_9.zip.new → episode_9_crf30.zip.new          RPE   10.1mm /  0.78°  ATE   17.7mm
+    episode_9.zip.new → episode_9_crf28.zip.new          RPE   11.1mm /  0.70°  ATE   17.6mm
+    episode_9.zip.new → episode_9_crf37.zip.new          RPE   57.4mm /  1.43°  ATE  176.0mm
+    episode_9.zip.new → episode_9_crf34.zip.new          RPE   92.8mm /  0.81°  ATE  339.9mm
+
+  → 与基准差异最小: episode_9.zip.new → episode_9_crf30.zip.new  (RPE@0.5s 10.1mm, ATE 17.7mm)
+  → 与基准差异最大: episode_9.zip.new → episode_9_crf34.zip.new  (RPE@0.5s 92.8mm, ATE 339.9mm)
+
+  结论: episode_9_crf30.zip.new 跟踪完整度仅 25%(最大间隙 5.1s), 压缩过大导致轨迹不可信, 不建议使用。
+  可用档位: episode_9.zip.new 完整度最高 (35%), 建议采用。
+

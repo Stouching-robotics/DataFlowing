@@ -1,0 +1,68 @@
+%YAML:1.0
+
+# enable depth model or not (1: enable 0:disable)
+enable_module: 1
+
+# depth model path (absolute path)
+model_path: models/rk3588/stereo_s_general.rknn
+
+# camera calibration (kalibr format) file path (absolute path)
+calib_path: /home/stouch/collector/tools/fayssense_depth_sdk/calib/calib.yaml
+
+# input stereo image size of a single camera
+input_stereo_width: 1280
+input_stereo_height: 800
+
+# scaling factor for stereo images (relative to inputs)
+stereo_img_scaling: 1
+
+# aux camera input image size (middle camera)
+input_aux_cam_width: 1920
+input_aux_cam_height: 1080
+
+# scaling factor for aux camera (relative to inputs)
+aux_cam_scaling: 1.0
+
+# num of infer threads
+thread_num: 1
+
+# 0: wait for result when feed stereo image;  1: feed stereo image func will return immediately
+async_mode: 1
+
+# 0: keep dimension in depth engine; 1: restore the depth dimension to the input image;
+restore_depth_dim: 1
+# debug settings:
+# 0: disable debug outputs
+# 1: enable debug  save images
+debug_image: 0
+# Debug file save path
+debug_img_save_path: ./debug_img
+# depth mod, 0: NPU 1: CPU
+depth_mode: 1
+# cam id need to align.[-1:disable, 0: left cam, 1: right cam, 2: rgb cam]
+align_cam_id: -1
+# [true: depth align to other; false: other align to depth]
+align_direction: true
+# enable Temporal Filtering & Spatial Filtering
+enable_filter: false
+# enable WLS disparity filtering (only for CPU depth_mode)
+wls_filter: false
+
+
+# pointcloud
+# the farthest depth distance extracted
+farthest_dist: 10
+cloest_dist: 0.3
+# voxel filter params
+# whether to enable voxel filter
+enable_voxel: true  
+# voxel size in meter
+voxelSize: 0.05 #0.003
+# voxel filtering threshold
+minPoints: 3
+# [0]:rectify; [1]:original cam0; [2]:vio
+pointcloud_type: 0
+# extract rectify image ROI
+pointcloud_ROI: 0.8
+# skip point from depth img to pointcloud
+skip_point: 1

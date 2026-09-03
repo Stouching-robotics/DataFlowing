@@ -1,0 +1,62 @@
+%YAML:1.0
+############################ Middle RGB Camera ############################
+# Rgb device number. Valid values: ${DEVICE_NODE} (enable) | NULL (disable)
+rgb_dev_port: /dev/video0
+# Auto white balance [true/false]
+awb: true
+# White balance coefficients
+rgb_white_balance_r: 1.3 #1
+rgb_white_balance_g: 0.8 #0.7
+rgb_white_balance_b: 2.1  #1.66
+# RGB image rotation angle, currently only 0/180 degree rotation is supported.
+rgb_rotate: 0
+# Image format of middle camera [0: bayer image, 1: RGB image]
+mid_img_fmt: 1
+# Image size of middle camera [1920x1080 or 960x540]
+rgb_cam_width: 1920
+rgb_cam_height: 1080
+
+############################## Stereo Camera ##############################
+# Stereo device number
+stereo_dev_port: /dev/video0
+# The width of the stereo camera image[640/1280]
+stereo_single_cam_width: 1280
+# The width of the stereo camera image[400/800]
+stereo_single_cam_height: 800
+# The frame rate of the stereo camera[25/50]
+stereo_fps: 25
+# Only support color sensors. Output: [0: raw image, 1: RGB image]
+# The stereo color camera only supports a resolution of 1280*800.
+stereo_color_mode: 1
+# auto white balance for stereo rgb sensor only
+stereo_awb: 1
+# rgb digital gains for stereo rgb sensor only (works when awb-mode is off)
+stereo_R_gain: 1.
+stereo_G_gain: 0.6
+stereo_B_gain: 1.3
+#   -1: auto initial exposure （Initially set the exposure to automatic, then fix the value.）
+#   1.0 ~ 885.0: manual exposure value
+stereo_init_exposure: 400
+# Stereo gain control [ 1.0 ~ 15.0 is manual : -1 auto gain ]
+stereo_gain_value: 6
+# ★ 原始传感器流专用副本（驱动逐字 1/0/1）。与默认 yaml 的区别只在 rotate
+#   相位：默认 yaml=0/1/0 对应**录制文件**（采集端已烘焙旋转，存储相位
+#   左 bggr/右 rggr）；本副本=1/0/1 对应**原始传感器流**（左目 rggb/右目
+#   bggr，采集端未烘焙，左目物理倒装）。离线管线把 rotate_180 当作 Bayer
+#   相位翻转施加（R↔B 解释互换），不施加几何旋转；swap_lr 离线惰性 ——
+#   几何校正需另加 --rotate-left 180（--rotate-right/--swap 同理）。
+left_cam_rotate_180: 1
+right_cam_rotate_180: 0
+stereo_swap_lr: 1
+
+################################### IMU ###################################
+# Imu device number
+imu_dev_port: /dev/video2
+# The gravity acceleration value of the device location
+gravity: 9.7946
+
+################################### COMMON ###################################
+# Print FPS to stdout every second [true/false]
+print_fps: true
+# read timeout (milliseconds)
+frame_timeout_ms: 2000

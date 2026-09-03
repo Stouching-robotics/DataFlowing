@@ -1,0 +1,11 @@
+# 手套识别 + 训练全套依赖
+# torch/torchvision 需要 CUDA 版，请用 setup.bat 安装（带 cu124 源），
+# 或手动:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# 没有 NVIDIA GPU 的机器:  pip install torch torchvision（CPU 版也可用，检测会慢）
+
+numpy>=1.24
+opencv-python>=4.8
+onnxruntime>=1.19
+rtmlib>=0.0.16
+ultralytics>=8.4.115
+openai-clip>=1.0.1

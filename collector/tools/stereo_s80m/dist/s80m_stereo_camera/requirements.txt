@@ -1,0 +1,4 @@
+# S80M 双目相机模块 Python 依赖
+# 安装: pip install -r requirements.txt
+numpy>=1.21
+opencv-python>=4.5
