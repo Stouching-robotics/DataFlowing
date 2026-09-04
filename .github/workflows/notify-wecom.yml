@@ -1,0 +1,140 @@
+name: Notify WeCom Group
+
+# 仓库动态推送企业微信群:push / Issue / Issue 评论 / PR / PR 代码评论 / 星标 / fork
+# push 事件只监听 processor/ 目录(你的代码)和工作流自身;其余事件为仓库级
+# 配置要求:仓库 secret 里要有 WECOM_WEBHOOK(企业微信群机器人 webhook 地址)
+# 企业微信机器人安全设置请选"关键词"并填 GitHub(消息首行永远包含 GitHub 三字)
+
+on:
+  push:
+    paths:
+      - 'processor/**'
+      - '.github/workflows/**'
+  issues:
+    types: [opened, closed, reopened]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, closed, reopened]
+  pull_request_review_comment:
+    types: [created]
+  watch:
+    types: [started]
+  fork:
+  workflow_dispatch: # 手动触发,用于测试配置是否生效
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to WeCom
+        env:
+          WECOM_WEBHOOK: ${{ secrets.WECOM_WEBHOOK }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys, urllib.request
+
+          event_name = os.environ["EVENT_NAME"]
+          event = json.loads(os.environ["EVENT_JSON"])
+          webhook = os.environ.get("WECOM_WEBHOOK", "")
+          if not webhook:
+              print("::error::未配置 WECOM_WEBHOOK secret,请到仓库 Settings → Secrets and variables → Actions 添加")
+              sys.exit(1)
+
+          def send_markdown(content):
+              body = json.dumps({"msgtype": "markdown", "markdown": {"content": content}}).encode("utf-8")
+              req = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"})
+              with urllib.request.urlopen(req, timeout=10) as resp:
+                  data = json.loads(resp.read())
+              print("WeCom response:", data)
+              if data.get("errcode") != 0:
+                  print("::error::企业微信返回错误:", data)
+                  sys.exit(1)
+
+          def truncate(text, limit=100):
+              text = (text or "").replace("\r", " ").replace("\n", " ").strip()
+              return text if len(text) <= limit else text[:limit] + "…"
+
+          repo = event.get("repository", {}).get("full_name", "?")
+          actor = event.get("sender", {}).get("login", "")
+          lines = [f"# GitHub 仓库动态: {repo}"]
+
+          if event_name == "push":
+              ref = event.get("ref", "")
+              pusher = event.get("pusher", {}).get("name") or actor
+              if event.get("deleted"):
+                  lines.append(f'> 🗑 分支被删除: <font color="warning">{ref}</font> by {pusher}')
+              else:
+                  short_ref = ref.replace("refs/heads/", "").replace("refs/tags/", "🏷 ")
+                  forced = event.get("forced", False)
+                  lines.append(f"> 📤 {pusher} {'force ' if forced else ''}push 到 **{short_ref}**")
+                  commits = event.get("commits", []) or []
+                  for c in commits[:5]:
+                      msg = truncate(c.get("message", ""), 60)
+                      author = c.get("author", {}).get("name", "?")
+                      lines.append(f"> `{c['id'][:7]}` {msg} — {author}")
+                  if len(commits) > 5:
+                      lines.append(f"> …共 **{len(commits)}** 个提交")
+                  if event.get("compare"):
+                      lines.append(f"> [查看变更]({event['compare']})")
+
+          elif event_name == "issues":
+              issue = event.get("issue", {})
+              action_cn = {"opened": "新建了 Issue", "closed": "关闭了 Issue",
+                           "reopened": "重新打开了 Issue"}.get(event.get("action", ""), event.get("action", ""))
+              lines.append(f"> 📝 {actor} {action_cn} **#{issue.get('number')} {truncate(issue.get('title',''), 60)}**")
+              lines.append(f"> [查看]({issue.get('html_url','')})")
+
+          elif event_name == "issue_comment":
+              comment = event.get("comment", {})
+              issue = event.get("issue", {})
+              if issue.get("pull_request"):
+                  lines.append(f"> 💬 {actor} 评论了 PR **#{issue.get('number')} {truncate(issue.get('title',''), 50)}**")
+              else:
+                  lines.append(f"> 💬 {actor} 评论了 Issue **#{issue.get('number')} {truncate(issue.get('title',''), 50)}**")
+              lines.append(f"> {truncate(comment.get('body',''), 120)}")
+              lines.append(f"> [查看]({comment.get('html_url','')})")
+
+          elif event_name == "pull_request":
+              pr = event.get("pull_request", {})
+              action = event.get("action", "")
+              if action == "closed" and pr.get("merged"):
+                  action_cn = "合并了 PR"
+              else:
+                  action_cn = {"opened": "新建了 PR", "closed": "关闭了 PR",
+                               "reopened": "重新打开了 PR"}.get(action, action)
+              head_ref = (pr.get("head") or {}).get("ref", "")
+              base_ref = (pr.get("base") or {}).get("ref", "")
+              lines.append(f"> 🔀 {actor} {action_cn} **#{pr.get('number')} {truncate(pr.get('title',''), 60)}**")
+              lines.append(f"> {head_ref} → {base_ref}")
+              lines.append(f"> [查看]({pr.get('html_url','')})")
+
+          elif event_name == "pull_request_review_comment":
+              comment = event.get("comment", {})
+              pr = event.get("pull_request", {})
+              path = comment.get("path", "")
+              line = comment.get("line") or comment.get("original_line", "")
+              lines.append(f"> 💬 {actor} 评论了 PR **#{pr.get('number')}** 的代码: `{path}:{line}`")
+              lines.append(f"> {truncate(comment.get('body',''), 120)}")
+              lines.append(f"> [查看]({comment.get('html_url','')})")
+
+          elif event_name == "watch":
+              stars = (event.get("repository") or {}).get("stargazers_count", "?")
+              lines.append(f"> ⭐ {actor} 星标了仓库,当前 **{stars}** 星")
+
+          elif event_name == "fork":
+              lines.append(f"> 🍴 {actor} fork 了仓库 → {event.get('forkee',{}).get('full_name','')}")
+
+          elif event_name == "workflow_dispatch":
+              lines.append("> 🧪 手动测试消息,配置一切正常 ✅")
+
+          else:
+              lines.append(f"> 事件 {event_name} by {actor}")
+
+          send_markdown("\n".join(lines))
+          PYEOF
