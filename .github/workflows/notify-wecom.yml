@@ -61,8 +61,9 @@ jobs:
               return text if len(text) <= limit else text[:limit] + "…"
 
           repo = event.get("repository", {}).get("full_name", "?")
+          repo_url = event.get("repository", {}).get("html_url", "")
           actor = event.get("sender", {}).get("login", "")
-          lines = [f"# GitHub 仓库动态: {repo}"]
+          lines = [f"# GitHub 仓库动态: [{repo}]({repo_url})"]
 
           if event_name == "push":
               ref = event.get("ref", "")
